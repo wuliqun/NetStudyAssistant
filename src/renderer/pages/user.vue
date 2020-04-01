@@ -9,11 +9,33 @@
         <router-link v-for="nav in navs" :key="nav.id" :to="{name:nav.routerName}" class="menu-item">{{ nav.name }}</router-link>
       </ul>
     </div>
-    <router-view></router-view>
+    <div class="content">
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script>
+const { ipcRenderer } = require('electron');
 export default {
+  beforeRouteEnter (to, from, next) {
+    ipcRenderer.send('resize',JSON.stringify({
+      width:960,
+      height:700
+    }));
+    next();
+  },
+  created(){
+    // if(!this.userInfo.realname){
+    //   this.$toast('请重新登录 ~~');
+    //   this.$router.replace({
+    //     name:'login'
+    //   });
+    //   return ;
+    // }
+    ipcRenderer.on('updated-learn',(e,data)=>{
+      this.setCurrentCourse(data);
+    });
+  },
   data(){
     return {
       navs:[
@@ -32,12 +54,41 @@ export default {
           name:'选课',
           routerName:'selectCourse'
         }
-      ]
+      ],
+      timer:null, // 刷新学习状态定时器
+      interval:20000 // 刷新间隔
+    }
+  },
+  methods:{
+    startRefresh(){
+      // 发送消息  主进程更新课程进度
+      this.timer = setInterval(() => {
+        ipcRenderer.send('update-learn',this.currentCourse.id);
+      }, this.interval);
+    }
+  },
+  watch:{
+    learning(val){
+      if(val){
+        clearInterval(this.timer);
+        this.startRefresh();
+      }else{
+        clearInterval(this.timer);
+      }
     }
   }
 };
 </script>
 <style lang="scss" scoped>
+.user{
+  display: flex;
+  flex-direction: column;
+  height:100%;
+  .content{
+    flex:1;
+  }
+}
+
 .header {
   height: 90px;
   padding-right: 50px;

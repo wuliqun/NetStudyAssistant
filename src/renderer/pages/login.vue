@@ -24,6 +24,13 @@
 <script>
 const { ipcRenderer } = require('electron');
 export default {
+  beforeRouteEnter (to, from, next) {
+    ipcRenderer.send('resize',JSON.stringify({
+      width:400,
+      height:750
+    }));
+    next();
+  },
   data(){
     return{
       username:'362203197702021945',

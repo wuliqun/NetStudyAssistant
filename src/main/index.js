@@ -1,11 +1,13 @@
 import { app, BrowserWindow,Menu,ipcMain } from 'electron'
-import electron from 'electron';
 import  {
   login,
-  getUserInfo
+  getUserInfo,
+  getUserData
 } from './js/api';
 import  { formatCookie,serializeParams } from './js/utils';
 let COOKIE = null;
+// courseList[] , currentCourse{}
+let userData = null;
 
 /**
  * Set `__static` path to static files in production
@@ -51,26 +53,7 @@ app.on('activate', () => {
   }
 })
 
-/**
- * Auto Updater
- *
- * Uncomment the following code below and install `electron-updater` to
- * support auto updating. Code Signing with a valid certificate is required.
- * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-electron-builder.html#auto-updating
- */
-
-/*
-import { autoUpdater } from 'electron-updater'
-
-autoUpdater.on('update-downloaded', () => {
-  autoUpdater.quitAndInstall()
-})
-
-app.on('ready', () => {
-  if (process.env.NODE_ENV === 'production') autoUpdater.checkForUpdates()
-})
- */
-
+// 登录
 ipcMain.on('login', (e, arg) => {
   // 登录
   login(arg).then(res => {
@@ -83,6 +66,7 @@ ipcMain.on('login', (e, arg) => {
   }).then(res=>{
     if(res !== '0'){
       mainWindow.webContents.send('user-info', res);
+      userData = getUserData(serializeParams(COOKIE,';'));
     }else{
       throw '登陆失败';
     }    
@@ -91,4 +75,16 @@ ipcMain.on('login', (e, arg) => {
     console.log('index.js',err);   
     mainWindow.webContents.send('login-err', err.message || err.descrption || err);
   });
+});
+// 更改窗体大小
+ipcMain.on('resize', (e, arg) => {
+  let size = JSON.parse(arg);
+  mainWindow.setSize(size.width,size.height);
+  mainWindow.center();
+});
+// 更新学习状态
+ipcMain.on('update-learn', (e, arg) => {
+  let size = JSON.parse(arg);
+  mainWindow.setSize(size.width,size.height);
+  mainWindow.center();
 });

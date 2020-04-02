@@ -35,6 +35,9 @@ export default {
     ipcRenderer.on('updated-learn',(e,data)=>{
       this.setCurrentCourse(data);
     });
+    ipcRenderer.on('user-data',(e,data)=>{
+      this.setUserData(JSON.parse(data));
+    });
   },
   data(){
     return {
@@ -117,11 +120,14 @@ export default {
 
 .menu {
   display: flex;
-  line-height: 88px;
+  height:100%;
   font-size: 20px;  
   font-weight: 700;
 }
 .menu-item {
+  height:100%;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   margin: 0 5px;
   padding: 0 20px;

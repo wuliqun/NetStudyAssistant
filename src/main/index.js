@@ -66,7 +66,13 @@ ipcMain.on('login', (e, arg) => {
   }).then(res=>{
     if(res !== '0'){
       mainWindow.webContents.send('user-info', res);
-      userData = getUserData(serializeParams(COOKIE,';'));
+      getUserData(serializeParams(COOKIE,';')).then(res=>{
+        userData = res;
+        mainWindow.webContents.send('user-data', JSON.stringify(res));
+      }).catch(err=>{
+        console.log('-------------index.js 73  ERROR -----------------');
+        console.log(err);
+      })
     }else{
       throw '登陆失败';
     }    

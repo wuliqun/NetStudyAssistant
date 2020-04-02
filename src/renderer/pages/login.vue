@@ -29,6 +29,15 @@ export default {
       width:400,
       height:750
     }));
+    if(from && from.path.indexOf('user') >= 0){
+      ipcRenderer.send('logout');      
+      next(vm=>{
+        vm.stopLearn();
+        vm.setUserInfo({});
+        vm.setUserData({});
+      });
+      return ;
+    }
     next();
   },
   data(){
@@ -36,6 +45,9 @@ export default {
       username:'362203197702021945',
       password:'Ww770202'
     }
+  },
+  created(){
+    
   },
   methods:{
     submit(){
@@ -46,16 +58,7 @@ export default {
         this.$toast('账号或密码格式有误 ~~');
         return ;
       }
-      ipcRenderer.send('login',`username=${username}&passwd=${password}`);
-      ipcRenderer.on('login-err',(e,err)=>{
-        this.$toast(err);
-      });
-      ipcRenderer.on('user-info',(e,userInfo)=>{
-        this.setUserInfo(JSON.parse(userInfo));
-        this.$router.replace({
-          name:'index'
-        })
-      });
+      ipcRenderer.send('login',`username=${username}&passwd=${password}`);      
     }
   }
 };

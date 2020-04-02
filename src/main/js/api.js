@@ -5,12 +5,15 @@ const apiUrl = {
   USERINFO: '/portal/checkIsLogin.do',
   OPTIONALCOURSE: '/student/course_myselect.do',
   COMPLETEDCOURSE: '/student/course_complete.do',
-  FORCEDCOURSE:'/student/course_will_select.do',
-  COURSELIST:'/student/course_list.do',
-  COURSECATE:'/student/course_category_index.do'
+  FORCEDCOURSE: '/student/course_will_select.do',
+  COURSELIST: '/student/course_list.do',
+  COURSECATE: '/student/course_category_index.do'
 }
-import { serializeParams } from './utils';
+import {
+  serializeParams
+} from './utils';
 import cheerio from 'cheerio';
+
 function login(arg) {
   return new Promise((resolve, reject) => {
     request({
@@ -42,7 +45,7 @@ function login(arg) {
   });
 }
 
-function fetchHtml(url, cookie) {
+function fetchHtml(url, cookie, gzip = false) {
   return new Promise((resolve, reject) => {
     request({
       url,
@@ -59,11 +62,13 @@ function fetchHtml(url, cookie) {
         Referer: 'http://www.jxgbwlxy.gov.cn/',
         'Upgrade-Insecure-Requests': 1,
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
-      }
+      },
+      gzip
     }, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         resolve(body);
       } else {
+        console.log(`fetch URL:${url} failed: `, error || response);
         reject(error || response.statusCode);
       }
     })
@@ -114,44 +119,48 @@ function getUserInfo(cookie) {
 //   },
 //   ...
 // ]
-function getOptionalCoursesCategories(cookie){  
-  fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2})}`,cookie).then(res=>{
+function getOptionalCoursesCategories(cookie) {
+  return fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2})}`, cookie, true).then(res => {
     // 二级分类下的类目ID
     let subjectIds = [];
     let $ = cheerio.load(res);
-    $('.lc_course_lists .hoz_accordion .zt-list-item-title').each(function(){
+    $('.lc_course_lists .hoz_accordion .zt-list-item-title').each(function () {
       subjectIds.push($(this).attr('id').match(/(\d+)$/)[1]);
     });
     return subjectIds;
-  }).then(subjectIds=>{
+  }).then(subjectIds => {
     let promises = [];
-    subjectIds.forEach(id=>{
-      promises.push(fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2,subjectId:id})}`,cookie)).then(body=>{
+    subjectIds.forEach(id => {
+      promises.push(fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2,subjectId:id})}`, cookie,true).then(body => {
         return {
           id,
           body
         }
-      })
+      }));
     });
     return Promise.all(promises);
-  }).then(maps=>{
+  }).then(maps => {
     let category = [];
-    maps.forEach(map=>{      
+    maps.forEach(map => {
       let $ = cheerio.load(map.body);
       let obj = {
-        subjectId:map.id,
-        subjectName:$(`#second${map.id} a`).text().trim(),
-        units:[]
+        subjectId: map.id,
+        subjectName: $(`#second${map.id} a`).text().trim(),
+        units: []
       }
-      $('.zt-list-item-son .lc_special_list .zt-list-item-icon+a').each(function(){
+      $('.zt-list-item-son .lc_special_list .zt-list-item-icon+a').each(function () {
         obj.units.push({
-          unitId:$(this).attr('onclick').match(/showCourse\((\d+),/)[1],
-          unitName:$(this).text().trim()
+          unitId: $(this).attr('onclick').match(/showCourse\((\d+),/)[1],
+          unitName: $(this).text().trim(),
+          courses: []
         });
       });
       category.push(obj);
     });
     return category;
+  }).catch(err => {
+    console.log('---------getOptionalCoursesCategories--------', err);
+    return [];
   });
 }
 // {
@@ -162,15 +171,15 @@ function getOptionalCoursesCategories(cookie){
 // courseYear: 
 // }
 // 
-function getOptionalCourseList(subjectId,unitId,cookie){
+function getOptionalCourseList(subjectId, unitId, cookie) {
   let body = serializeParams({
-    menu:'mall',
+    menu: 'mall',
     subjectId,
     unitId,
-    searchType:'hengpai',
-    courseYear:''
+    searchType: 'hengpai',
+    courseYear: ''
   });
-  return new Promise((resolve,reject)=>{
+  return new Promise((resolve, reject) => {
     request({
       url: baseUrl + apiUrl.COURSELIST,
       method: "POST",
@@ -193,13 +202,14 @@ function getOptionalCourseList(subjectId,unitId,cookie){
       body
     }, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        resolve(JSON.parse(body).courseStr);
+        resolve(JSON.parse(JSON.parse(body).courseStr));
       } else {
         reject(error || response.statusCode);
       }
     })
   })
 }
+
 function getCourse(url, params, cookie) {
   return new Promise((resolve, reject) => {
     request({
@@ -242,7 +252,13 @@ function getCourse(url, params, cookie) {
       let courseLinkId = $(this).find('.hoz_course_name a').attr('href').match(/(\d+)$/)[1];
       let courseId = $(this).find('.btn_group input').attr('onclick').match(/(\d+)\)$/)[1];
       courses.push({
-        img, courseName, time, studyHours, percent, courseId,courseLinkId
+        img,
+        courseName,
+        time,
+        studyHours,
+        percent,
+        courseId,
+        courseLinkId
       });
     });
     return courses;
@@ -277,22 +293,23 @@ function getUserData(cookie) {
   return Promise.all([
     getCourse(baseUrl + apiUrl.OPTIONALCOURSE, optionalCourseParams, cookie),
     getCourse(baseUrl + apiUrl.COMPLETEDCOURSE, completedCourseParams, cookie),
-    getCourse(baseUrl + apiUrl.FORCEDCOURSE, forcedCourseParams, cookie),
-    getOptionalCoursesCategories(cookie)
-  ]).then(res=>{
-    console.log(res);
-    let [optionalCourses,completedCourses,forcedCourses,courseCategories] = res;
+    getCourse(baseUrl + apiUrl.FORCEDCOURSE, forcedCourseParams, cookie)
+  ]).then(res => {
+    let [optionalCourses, completedCourses, forcedCourses] = res;
     return {
-      optionalCourses,completedCourses,forcedCourses,courseCategories
+      optionalCourses,
+      completedCourses,
+      forcedCourses
     }
   });
 }
-
 
 
 export {
   login,
   fetchHtml,
   getUserInfo,
-  getUserData
+  getUserData,
+  getOptionalCoursesCategories,
+  getOptionalCourseList
 }

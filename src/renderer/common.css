@@ -7,7 +7,14 @@ div{
 }
 html,body,#app{
   height:100%;
+  overflow: hidden;
 }
 body{
-  user-select: none;
+  user-select: none;  
+}
+.f-thide{
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }

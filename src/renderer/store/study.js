@@ -219,6 +219,7 @@ export default {
         },
       ]
     },
+    categories:[],
     learning: false,
     currentCourse: {}
   },
@@ -234,7 +235,25 @@ export default {
       state.learning = false;
     },
     setUserData(state, data) {
+      console.log('setUserData',data);
       state.userData = data;
+    },
+    setCategories(state,categories){
+      state.categories = categories;
+    },
+    setCategoriesCourses(state,data){
+      console.log('setCategoriesCourses',data);
+      let { subjectId,unitId,courses } = data;
+      for(let i = 0;i<state.categories.length;i++){        
+        if(state.categories[i].subjectId === subjectId){
+          for(let j = 0;j<state.categories[i].units.length;j++){
+            if(state.categories[i].units[j].unitId === unitId){
+              state.categories[i].units[j].courses = courses;
+              return ;
+            }  
+          }
+        }
+      }
     }
   },
   actions: {}

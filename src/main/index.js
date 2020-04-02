@@ -2,7 +2,9 @@ import { app, BrowserWindow,Menu,ipcMain } from 'electron'
 import  {
   login,
   getUserInfo,
-  getUserData
+  getUserData,
+  getOptionalCoursesCategories,
+  getOptionalCourseList
 } from './js/api';
 import  { formatCookie,serializeParams } from './js/utils';
 let COOKIE = null;
@@ -93,4 +95,32 @@ ipcMain.on('update-learn', (e, arg) => {
   let size = JSON.parse(arg);
   mainWindow.setSize(size.width,size.height);
   mainWindow.center();
+});
+
+// 退出
+ipcMain.on('logout', (e) => {
+  COOKIE = null;
+  userData = null;
+});
+
+// 获取课程分类
+ipcMain.on('get-category', (e) => {
+  console.log('get-category')
+  getOptionalCoursesCategories(serializeParams(COOKIE,';')).then(res=>{
+    mainWindow.webContents.send('categories', JSON.stringify(res));
+  }).catch(err=>{
+    console.log('getOptionalCoursesCategories ERROR',err);
+  })
+});
+// 根据 subjectId unitId 获取课程列表
+ipcMain.on('get-course-list',(e,arg)=>{
+  console.log('get-course-list');
+  let { subjectId,unitId } = JSON.parse(arg);
+  getOptionalCourseList(subjectId,unitId,serializeParams(COOKIE,';')).then(courses=>{
+    mainWindow.webContents.send('categories-courses', JSON.stringify({
+      subjectId,unitId,courses
+    }));
+  }).catch(err=>{
+    console.log('getOptionalCourseList ERROR',err);
+  });
 });

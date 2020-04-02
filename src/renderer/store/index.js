@@ -8,10 +8,10 @@ import study from './study';
 Vue.use(Vuex);
 Vue.mixin({
   computed:{
-    ...mapState('study', ['userInfo','currentCourse','learning','userData']),
+    ...mapState('study', ['userInfo','currentCourse','learning','userData','categories']),
   },
   methods:{
-    ...mapMutations('study', ['setUserInfo','setCurrentCourse','stopLearn','setUserData']),
+    ...mapMutations('study', ['setUserInfo','setCurrentCourse','stopLearn','setUserData','setCategories','setCategoriesCourses']),
   }
 });
 export default new Vuex.Store({

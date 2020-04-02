@@ -15,7 +15,7 @@
   </div>
 </template>
 <script>
-const { ipcRenderer } = require('electron');
+const { ipcRenderer } = require("electron");
 export default {
   beforeRouteEnter (to, from, next) {
     ipcRenderer.send('resize',JSON.stringify({
@@ -31,13 +31,7 @@ export default {
     //     name:'login'
     //   });
     //   return ;
-    // }
-    ipcRenderer.on('updated-learn',(e,data)=>{
-      this.setCurrentCourse(data);
-    });
-    ipcRenderer.on('user-data',(e,data)=>{
-      this.setUserData(JSON.parse(data));
-    });
+    // }    
   },
   data(){
     return {
@@ -56,6 +50,11 @@ export default {
           id:2,
           name:'选课',
           routerName:'selectCourse'
+        },
+        {
+          id:3,
+          name:'退出',
+          routerName:'login'
         }
       ],
       timer:null, // 刷新学习状态定时器
@@ -71,13 +70,14 @@ export default {
     }
   },
   watch:{
+    // TODO:
     learning(val){
-      if(val){
-        clearInterval(this.timer);
-        this.startRefresh();
-      }else{
-        clearInterval(this.timer);
-      }
+      // if(val){
+      //   clearInterval(this.timer);
+      //   this.startRefresh();
+      // }else{
+      //   clearInterval(this.timer);
+      // }
     }
   }
 };
@@ -87,6 +87,9 @@ export default {
   display: flex;
   flex-direction: column;
   height:100%;
+  .header{
+    flex-shrink: 0;
+  }
   .content{
     flex:1;
   }

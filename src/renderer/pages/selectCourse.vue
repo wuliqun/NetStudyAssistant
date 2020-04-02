@@ -26,7 +26,8 @@
           @click="chooseUnit(index)"
         >{{ unit.unitName }}</div>
       </div>
-      <div class="course-list">
+      <div class="main">
+        <div class="course-list">
         <div class="course-item" v-for="(item,index) in activeCourses" :key="index">
           <div class="img">
             <img :src="'http://www.jxgbwlxy.gov.cn:10088/course_image/' + item.cover_image" alt />
@@ -38,14 +39,18 @@
               <p>{{ item.learning_hour }}学时</p>
             </div>
           </div>
-          <a href="javascript:void(0);" class="learn-btn" @click="startLearn(index)">开始学习</a>
+          <a href="javascript:void(0);" class="learn-btn" @click="chooseLesson(index)">选择课程</a>
         </div>
-        <div class="empty" v-if="activeCourses.length === 0">当前没有已选择课程,可点击左边一键选课</div>
+        <div class="loading" v-if="activeCourses.length === 0">
+          <i class="icon"></i>
+          加载中...
+        </div>
       </div>
       <div class="pagination" v-show="totalPage > 1">
         <a href="javascript:void(0);" class="page" @click="jumpPage(0)">首页</a>
         <a href="javascript:void(0);" class="page" @click="prevPage">上一页</a>
         <a href="javascript:void(0);" class="page" @click="nextPage">下一页</a>
+      </div>
       </div>
     </div>
   </div>
@@ -65,9 +70,9 @@ export default {
     };
   },
   created() {
-    // if(!this.categories.length){
-    //   ipcRenderer.send('get-category');
-    // }
+    if(!this.categories.length){
+      ipcRenderer.send('get-category');
+    }
   },
   methods: {
     chooseCate(index) {
@@ -92,21 +97,59 @@ export default {
           })
         );
       }
-    }
+    },
+    // 选课
+    chooseLesson(index){
+      let course = this.activeCourses[index];
+      ipcRenderer.send('choose-course',JSON.stringify({
+        id:course.id,
+        subjectIndex:this.currentIndex,
+        unitIndex:this.unitIndex
+      }));
+    },
+    prevPage() {
+      if (this.page === 0) {
+        this.$toast("已是首页 ~~");
+        return;
+      }
+      this.jumpPage(this.page - 1);
+    },
+    nextPage() {
+      if (this.page >= this.totalPage - 1) {
+        this.$toast("已是末页 ~~");
+        return;
+      }
+      this.jumpPage(this.page + 1);
+    },
+    jumpPage(index) {
+      this.page = index;
+    },
   },
   computed: {
     // TODO:
     cates() {
-      return categories;
-      // return this.categories
+      // return categories;
+      return this.categories
     },
     units() {
-      return this.cates[this.currentIndex].units;
+      try{
+        return this.cates[this.currentIndex].units;
+      }catch(e){
+        return [];
+      }
     },
     // TODO:
     courses() {
-      return courses;
-      // return this.units[this.unitIndex].courses;
+      // return courses.filter(course=>{
+      //   return course.usercourseid == 0
+      // });
+      try{
+        return this.units[this.unitIndex].courses.filter(course=>{
+          return course.usercourseid == 0
+        });
+      }catch(e){
+        return [];
+      }
     },
     activeCourses() {
       return this.courses.slice(
@@ -119,17 +162,14 @@ export default {
     }
   },
   watch: {
-    currentIndex: {
-      handler() {
-        this.checkCourseList();
-      },
-      immediate: true
+    currentIndex(val) {
+      this.checkCourseList();
     },
-    unitIndex: {
-      handler() {
-        this.checkCourseList();
-      },
-      immediate: true
+    unitIndex(val){
+      this.checkCourseList();
+    },
+    categories(val){
+      this.checkCourseList();
     }
   }
 };
@@ -205,7 +245,10 @@ export default {
     background: #ededed;
   }
 }
-
+.main{
+  flex:1;
+  padding:10px 0 0 15px;
+}
 .course-list {
   height: 398px;
   .course-item {
@@ -275,4 +318,27 @@ export default {
     text-decoration: none;
   }
 }
+.loading{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height:200px;
+  font-size: 20px;
+  color:#000;
+  .icon{
+    width:20px;
+    height:20px;
+    margin-right: 3px;
+    background-image: url(../img/loading.png);
+    background-size: 100% 100%;
+    animation:rotate .5s linear infinite;
+  }
+}
+@keyframes rotate{ 
+		0%{transform:rotate(0deg);} 
+		25%{transform:rotate(90deg);} 
+		50%{transform:rotate(180deg);} 
+		75%{transform:rotate(270deg);} 
+		100%{transform:rotate(360deg);} 
+	}
 </style>

@@ -7,15 +7,17 @@ import {
 import study from './study';
 Vue.use(Vuex);
 Vue.mixin({
-  computed:{
-    ...mapState('study', ['userInfo','currentCourse','learning','userData','categories']),
+  computed: {
+    ...mapState('study', ['userInfo', 'currentCourse', 'learning', 'userData', 'categories']),
   },
-  methods:{
-    ...mapMutations('study', ['setUserInfo','setCurrentCourse','stopLearn','setUserData','setCategories','setCategoriesCourses']),
+  methods: {
+    ...mapMutations('study', ['setUserInfo', 'setCurrentCourse',
+       'stopLearn', 'setUserData', 'setCategories', 'setCategoriesCourses',
+       'setCurrentCoursePercent', 'setChooseCourse','finishCourse']),
   }
 });
 export default new Vuex.Store({
   modules: {
     study
-  }  
+  }
 });

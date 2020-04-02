@@ -3,7 +3,7 @@
     <div class="header">
       <div class="logo">
         <img src="../img/logo.png" alt />
-        <p class="txt">Electron TEST</p>
+        <p class="txt">网络学习助手</p>
       </div>
       <ul class="menu">
         <router-link v-for="nav in navs" :key="nav.id" :to="{name:nav.routerName}" class="menu-item">{{ nav.name }}</router-link>
@@ -63,22 +63,9 @@ export default {
   },
   methods:{
     startRefresh(){
-      // 发送消息  主进程更新课程进度
-      this.timer = setInterval(() => {
-        ipcRenderer.send('update-learn',this.currentCourse.id);
-      }, this.interval);
     }
   },
   watch:{
-    // TODO:
-    learning(val){
-      // if(val){
-      //   clearInterval(this.timer);
-      //   this.startRefresh();
-      // }else{
-      //   clearInterval(this.timer);
-      // }
-    }
   }
 };
 </script>

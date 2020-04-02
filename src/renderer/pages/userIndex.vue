@@ -23,7 +23,7 @@
         <p class="txt" :class="{red:!completedMust}">{{ userInfo.ywcbxxs }}</p>
       </div>
       <div class="btns">
-        <a href="javascript:void(0);" class="btn">自动学习</a>
+        <a href="javascript:void(0);" class="btn" @click="autoLearn">自动学习</a>
         <a href="javascript:void(0);" class="btn">一键选课</a>
       </div>
       <div class="tip" :class="{red:!completedTotal}">
@@ -102,6 +102,7 @@
   </div>
 </template>
 <script>
+const { ipcRenderer } = require("electron");
 export default {
   data() {
     return {
@@ -134,8 +135,16 @@ export default {
       this.pageIndex = index;
     },
     startLearn(index) {
+      if(this.learning){
+        return ;
+      }
       let course = this.list[index];
       this.setCurrentCourse(course);
+      ipcRenderer.send('learn-course',course.courseId);
+    },
+    autoLearn(){
+      this.pageIndex = 0;
+      this.startLearn(0);
     }
   },
   computed: {

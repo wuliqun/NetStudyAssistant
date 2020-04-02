@@ -4,7 +4,11 @@ import  {
   getUserInfo,
   getUserData,
   getOptionalCoursesCategories,
-  getOptionalCourseList
+  getOptionalCourseList,
+  chooseCourse,
+  courseDetail,
+  learnCourse,
+  seekCourse
 } from './js/api';
 import  { formatCookie,serializeParams } from './js/utils';
 let COOKIE = null;
@@ -70,6 +74,7 @@ ipcMain.on('login', (e, arg) => {
       mainWindow.webContents.send('user-info', res);
       getUserData(serializeParams(COOKIE,';')).then(res=>{
         userData = res;
+        console.log('userData---',res);
         mainWindow.webContents.send('user-data', JSON.stringify(res));
       }).catch(err=>{
         console.log('-------------index.js 73  ERROR -----------------');
@@ -122,5 +127,51 @@ ipcMain.on('get-course-list',(e,arg)=>{
     }));
   }).catch(err=>{
     console.log('getOptionalCourseList ERROR',err);
+  });
+});
+
+// 选课
+ipcMain.on('choose-course',(e,arg)=>{
+  console.log('choose-course');
+  let { subjectIndex,unitIndex,id } = JSON.parse(arg);
+  chooseCourse(id,serializeParams(COOKIE,';')).then(res=>{
+    mainWindow.webContents.send('choose-course-success', JSON.stringify({
+      subjectIndex,unitIndex,id,courseId:res
+    }));
+  }).catch(err=>{
+    mainWindow.webContents.send('choose-course-fail',err.description || err.message || err);
+  });
+});
+
+let learnParams = null,
+    learnTimer = null,
+    learnInterval = 28000;
+
+function intervalLearn(){
+  if(learnTimer) clearInterval(learnTimer);
+  learnTimer = setInterval(() => {
+    try{
+      seekCourse(learnParams,serializeParams(COOKIE,';'));
+      courseDetail(id,serializeParams(COOKIE,';')).then(percent=>{
+        if(percent === '100.0%'){
+          mainWindow.webContents.send('learn-course-finish');
+          clearInterval(learnTimer);
+        }else{
+          mainWindow.webContents.send('learn-course-progress', percent);
+        }
+      })
+    }catch(e){
+      mainWindow.webContents.send('learn-course-fail');
+    }
+  }, learnInterval);
+}
+// 上课
+ipcMain.on('learn-course',(e,id)=>{
+  console.log('learn-course');
+  learnCourse(id,serializeParams(COOKIE,';')).then(params=>{
+    learnParams = params;
+    intervalLearn();
+  }).catch(e=>{
+    console.log('index.js ---- 170 ERROR',e)
   });
 });

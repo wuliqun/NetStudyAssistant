@@ -7,7 +7,11 @@ const apiUrl = {
   COMPLETEDCOURSE: '/student/course_complete.do',
   FORCEDCOURSE: '/student/course_will_select.do',
   COURSELIST: '/student/course_list.do',
-  COURSECATE: '/student/course_category_index.do'
+  COURSECATE: '/student/course_category_index.do',
+  COURSESELECT: '/student/course_select.do',
+  COURSEDETAIL: '/portal/course_detail.do',
+  COURSELEARN: '/portal/study_play.do',
+  COURSESEEK: '/portal/study_seek.do'
 }
 import {
   serializeParams
@@ -120,7 +124,7 @@ function getUserInfo(cookie) {
 //   ...
 // ]
 function getOptionalCoursesCategories(cookie) {
-  return fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2})}`, cookie, true).then(res => {
+  return fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({ menu: 'mall', categoryId: 2 })}`, cookie, true).then(res => {
     // 二级分类下的类目ID
     let subjectIds = [];
     let $ = cheerio.load(res);
@@ -131,7 +135,7 @@ function getOptionalCoursesCategories(cookie) {
   }).then(subjectIds => {
     let promises = [];
     subjectIds.forEach(id => {
-      promises.push(fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({menu:'mall',categoryId:2,subjectId:id})}`, cookie,true).then(body => {
+      promises.push(fetchHtml(`${baseUrl}${apiUrl.COURSECATE}?${serializeParams({ menu: 'mall', categoryId: 2, subjectId: id })}`, cookie, true).then(body => {
         return {
           id,
           body
@@ -209,7 +213,42 @@ function getOptionalCourseList(subjectId, unitId, cookie) {
     })
   })
 }
-
+// 选课
+function chooseCourse(id, cookie) {
+  return new Promise((resolve, reject) => {
+    request({
+      url: baseUrl + apiUrl.COURSESELECT,
+      method: "POST",
+      headers: {
+        Accept: '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Origin: 'http://www.jxgbwlxy.gov.cn',
+        Referer: 'http://www.jxgbwlxy.gov.cn/student/course_category_index.do?menu=mall&categoryId=2',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: serializeParams({ courseId: id })
+    }, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        resolve(body);
+      } else {
+        reject(error || response);
+      }
+    })
+  });
+}
+// 个人的课程详情
+function courseDetail(id, cookie) {
+  return fetchHtml(`${baseUrl}${apiUrl.COURSEDETAIL}?${serializeParams({
+    menu: 'mall',
+    courseId: id
+  })}`).then(res => {
+    let $ = cheerio.load(res);
+    return $('.cse_dtl_pro_percent').text();
+  }).catch(e => {
+    throw e;
+  })
+}
 function getCourse(url, params, cookie) {
   return new Promise((resolve, reject) => {
     request({
@@ -263,6 +302,7 @@ function getCourse(url, params, cookie) {
     });
     return courses;
   }).catch(err => {
+    console.log('getUserCourse --- ERROR',err);
     return [];
   })
 }
@@ -303,7 +343,74 @@ function getUserData(cookie) {
     }
   });
 }
+let learnParams = {
+  callback: 'showData',
+  'uuid': '781177e7-eadb-4cf3-a23f-9efeb093e9f3',
+  'id': 74143405,
+  serializeSco: '{"0":{"cmi.core.exit":"logout","cmi.core.lesson_location":"356.0","cmi.core.session_time":"00:01:00","cmi.core.entry":"resume","last_learn_time":"2020-04-02 22:20:19"}}',
+  duration: 30000,
+  a: '提交',
+  token: "hLQi24jbf2VeaPQ+N84TjYY5hl2XiSpg+0y7Nt+ph3Y='",
+  uct_id: 6586138,
+  _: 1585836799126
+}
+// callbackUrl: "http://www.jxgbwlxy.gov.cn/portal/study_seek.do"
+// course_name: "《1844年经济学哲学手稿》导读"
+// course_no: "zm1955041"
+// courseware_type: "0"
+// courseware_url: ""
+// serialize_sco: "{"0":{"cmi.core.exit":"logout","cmi.core.lesson_location":"NaN.0","cmi.core.session_time":"00:00:00","cmi.core.entry":"resume"}}"
+// token: "hLQi24jbf2VeaPQ+N84TjYY5hl2XiSpg+0y7Nt+ph3Y="
+// ucid: "74143405"
+// uct_id: "6586138"
+// uuid: "a1c6e9d0-dbe2-4337-87be-1760b2f64dc0"
 
+// 保持学习进度
+function seekCourse(params, cookie) {
+  let learnParams = {
+    callback: 'showData',
+    uuid: params.uuid,
+    id: params.ucid,
+    serializeSco: params.serializeSco || '{"0":{}}',
+    duration: 30000,
+    a: '提交',
+    token: params.token,
+    uct_id: params.uct_id,
+    _: Date.now()
+  }
+  return new Promise((resolve, reject) => {
+    request({
+      url: baseUrl + apiUrl.COURSESEEK + '?' + encodeURIComponent(serializeParams(learnParams)),
+      method: "GET",
+      headers: {
+        Accept: '*/*',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
+        Connection: 'keep-alive',
+        Cookie: cookie,
+        Host: 'www.jxgbwlxy.gov.cn',
+        Referer: 'www.jxgbwlxy.gov.cn',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36'
+      },
+      gzip: true,
+    }, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        console.log('seekCourse---',body);
+        resolve(body);
+      } else {
+        console.log('seekCourse---ERROR',error);
+        reject(error || response);
+      }
+    })
+  })
+}
+function learnCourse(id, cookie) {
+  return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie).then(res => {
+    let $ = cheerio.load(res);
+    let params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
+    return params;
+  });
+}
 
 export {
   login,
@@ -311,5 +418,9 @@ export {
   getUserInfo,
   getUserData,
   getOptionalCoursesCategories,
-  getOptionalCourseList
+  getOptionalCourseList,
+  chooseCourse,
+  courseDetail,
+  learnCourse,
+  seekCourse
 }

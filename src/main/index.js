@@ -143,6 +143,7 @@ function intervalLearn(){
     try{
       seekCourse(learnParams,serializeParams(COOKIE,';'));
       courseDetail(id,serializeParams(COOKIE,';')).then(percent=>{
+        console.log('readCourseProgress,--',percent);
         if(percent === '100.0%'){
           mainWindow.webContents.send('learn-course-finish');
           clearInterval(learnTimer);

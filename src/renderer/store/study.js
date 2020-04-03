@@ -68,7 +68,7 @@ export default {
           break;
         }
       }
-      state.optionalCourses.push({
+      state.optionalCourses.courses.push({
         img: `http://www.jxgbwlxy.gov.cn:10088/course_image/${course.cover_image}`,
         courseName: course.course_name,
         time: course.duration,

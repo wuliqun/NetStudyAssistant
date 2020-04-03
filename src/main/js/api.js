@@ -213,7 +213,7 @@ function getOptionalCourseList(subjectId, unitId, cookie) {
     })
   })
 }
-// 选课  TODO:
+// 选课
 function chooseCourse(id, cookie) {
   return new Promise((resolve, reject) => {
     request({
@@ -223,6 +223,7 @@ function chooseCourse(id, cookie) {
         Accept: '*/*',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         Origin: 'http://www.jxgbwlxy.gov.cn',
+        Cookie:cookie,
         Referer: 'http://www.jxgbwlxy.gov.cn/student/course_category_index.do?menu=mall&categoryId=2',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest'
@@ -241,10 +242,15 @@ function chooseCourse(id, cookie) {
 }
 // 个人的课程详情
 function courseDetail(id, cookie) {
+  console.log(`courseDetail API,${id}`)
+  console.log(`${baseUrl}${apiUrl.COURSEDETAIL}?${serializeParams({
+    menu: 'mall',
+    courseId: id
+  })}`)
   return fetchHtml(`${baseUrl}${apiUrl.COURSEDETAIL}?${serializeParams({
     menu: 'mall',
     courseId: id
-  })}`).then(res => {
+  })}`,cookie,true).then(res => {
     let $ = cheerio.load(res);
     return $('.cse_dtl_pro_percent').text();
   }).catch(e => {
@@ -322,25 +328,26 @@ function getUserCourse(type,cookie) {
   return getCourse(url, params, cookie);
 }
 
-// 保持学习进度 TODO:
+// 保持学习进度 TODO:  unfinish
 function seekCourse(params, cookie) {
   let learnParams = {
     callback: 'showData',
     uuid: params.uuid,
     id: params.ucid,
-    serializeSco: params.serializeSco || '{"0":{}}', // ??
+    serializeSco: encodeURIComponent(params.serialize_sco),
     duration: 30000,
-    a: '提交',
+    a: true,
     token: params.token,
     uct_id: params.uct_id,
     _: Date.now()
   }
   console.log('learnParams-------',learnParams);
-  console.log(encodeURIComponent(serializeParams(learnParams)));
+  console.log(baseUrl + apiUrl.COURSESEEK + '?' + serializeParams(learnParams));
   return new Promise((resolve, reject) => {
     request({
-      url: baseUrl + apiUrl.COURSESEEK + '?' + encodeURIComponent(serializeParams(learnParams)),
+      url: baseUrl + apiUrl.COURSESEEK + '?' + serializeParams(learnParams),
       method: "GET",
+      dataType: "jsonp",
       headers: {
         Accept: '*/*',
         'Accept-Encoding': 'gzip, deflate',
@@ -353,13 +360,14 @@ function seekCourse(params, cookie) {
       },
       gzip:true
     }, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log('seekCourse---',body);
-        resolve(body);
-      } else {
-        console.log('seekCourse---ERROR',error);
-        reject(error || response);
-      }
+      // if (!error && response.statusCode == 200) {
+      //   console.log('seekCourse---',body);
+      //   resolve(body);
+      // } else {
+      //   console.log('seekCourse---ERROR',error);
+      //   reject(error || body);
+      // }
+      resolve();
     })
   })
 }
@@ -368,6 +376,7 @@ function learnCourse(id, cookie) {
   return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie,true).then(res => {
     let $ = cheerio.load(res);    
     let params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
+    params.courseId = $('body').attr('onbeforeunload').match(/(\d+)/)[1];
     return params;
   },err=>{
     console.log('learn error------',err);

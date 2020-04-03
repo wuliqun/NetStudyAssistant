@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>课件播放中...</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="x-ua-compatible" content="IE=EmulateIE8" />
+  <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>
+  <script type="text/javascript" src="js/sco_old_api.js"></script>
+  <script type="text/javascript">
+    var param = $.GetQueryString("param");
+    var sco_id = $.GetQueryString("scoId");
+    var playUrl = $.GetQueryString("playUrl");
+    var counter = 0;
+    var scoCourse = {};
+    var sco = {};
+    setInterval(function () {
+      counter += 1000
+    }, 1000);
+
+    //时间格式化
+    function formatDate(fmt, date) { //author: meizz   
+      var o = {
+        "M+": date.getMonth() + 1, //月份   
+        "d+": date.getDate(), //日   
+        "h+": date.getHours(), //小时   
+        "m+": date.getMinutes(), //分   
+        "s+": date.getSeconds(), //秒   
+        "q+": Math.floor((date.getMonth() + 3) / 3), //季度   
+        "S": date.getMilliseconds() //毫秒   
+      };
+      if (/(y+)/.test(fmt))
+        fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+      for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+          fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+      return fmt;
+    }
+
+    if (sco_id == "" || sco_id == null)
+      sco_id = "undefind_scoID";
+    if (param == null || param == "") {
+      alert('参数异常，请关闭此页面重新点击播放课件。');
+      window.close();
+    } else {
+      //处理参数然后打开正确的页面
+      var course = JSON.parse(param);
+      //按照指定的url进行播放
+      if (playUrl != null && playUrl != "") {
+        //接口准备
+        var scoStr = course.serialize_sco;
+        if (scoStr == null || scoStr == "null" || scoStr == "")
+          scoStr = {};
+        if (typeof (scoStr) == "string" && (scoStr.indexOf("┛") > -1 || scoStr.indexOf("━") > -1))
+          scoCourse = unSerializeObj(scoStr);
+        else if (typeof (scoStr) == "string")
+          scoCourse = JSON.parse(scoStr)
+
+        sco = scoCourse[sco_id];
+        if (sco == null || sco == "undefind")
+          sco = {};
+
+        //按照url播放
+        //如果是网页课程 c
+        var courseUrl = "";
+        if (playUrl.indexOf(".htm") > 0 || playUrl.indexOf(".html") > 0) {
+          courseUrl = playUrl;
+        }
+        //如果是wmv课程
+        else if (playUrl.indexOf(".wmv") > 0) {
+          courseUrl = "wmplayer.html?playUrl=" + playUrl + "&param=" + param;
+        }
+        //如果是mp4课程
+        else if (playUrl.indexOf(".mp4") > 0) {
+          courseUrl = "mp4player.html?playUrl=" + playUrl + "&param=" + param;
+        }
+        //开始播放
+        $(function () {
+          $("#course_frame").attr("src", courseUrl);
+          $("iframe").css("height", $(document).height() - 4).css("width", $(document).width());
+          $(window).resize(function () {
+            $("iframe").css("height", $(document).height() - 4).css("width", $(document).width());
+          });
+        });
+
+      } else {
+        alert('参数异常，请关闭此页面重新点击播放课件。');
+        window.close();
+      }
+    }
+
+    function receive(data) {
+      try {
+        if (data == "success") {
+          counter = 0;
+          console.info("发送数据：" + data);
+        }
+      } catch (ex) {}
+
+    }
+    //以下为SCORM API
+    function subSCOStr(flag) {
+      scoCourse[sco_id] = sco;
+      if (sco != null && sco != "") {
+        var scoStr = JSON.stringify(scoCourse);
+        course.serialize_sco = scoStr;
+        $.ajax({
+          url: course.callbackUrl,
+          data: {
+            uuid: course.uuid,
+            id: course.ucid,
+            serializeSco: course.serialize_sco,
+            duration: counter,
+            a: flag,
+            token: course.token,
+            uct_id: course.uct_id
+          },
+          type: "GET",
+          dataType: "jsonp",
+          jsonpCallback: "showData",
+          success: function (data) {
+            console.debug(data);
+          }
+        });
+        if (flag == true)
+          counter = 0;
+        console.debug(scoStr);
+      }
+    }
+
+    function submitSon() {
+      //向下探入课程进行提交
+      try {
+        var doQuit = $("#course_frame")[0].contentWindow.doQuit;
+        if (doQuit.length == 0)
+          doQuit();
+        else
+          subSCOStr(true);
+      } catch (ex) {
+        subSCOStr(true);
+      }
+    }
+    var timerSubmit = setInterval(function () {
+      try {
+        submitSon();
+      } catch (ex) {
+        try {
+          console.error("提交错误：" + ex);
+        } catch (ex1) {}
+      }
+    }, 30000);
+    window.onbeforeunload = function () {
+      submitSon(true);
+    };
+    //$(window).unload(function(){submitSon();});
+    var API = new Object();
+
+    API.LMSInitialize = function () {
+      return "true";
+    }
+    API.LMSSetValue = function (name, value) {
+      sco[name] = value;
+      scoCourse[sco_id] = sco;
+      change = true;
+      return "";
+    }
+    API.LMSGetValue = function (name) {
+      return sco[name] == null ? "" : sco[name];
+    }
+    API.LMSCommit = function () {
+      sco['last_learn_time'] = formatDate("yyyy-MM-dd hh:mm:ss", new Date());
+      subSCOStr('提交');
+      return "";
+    }
+    API.LMSFinish = function () {
+      //subSCOStr();
+      return "";
+    }
+    API.LMSGetLastError = function () {
+      return 0;
+    }
+    API.LMSGetErrorString = function (value) {
+      return "";
+    }
+    API.LMSGetDiagnostic = function (value) {
+      return "";
+    }
+  </script>
+  <style type="text/css">
+    * {
+      margin: 0;
+      padding: 0;
+      font-family: "宋体"
+    }
+  </style>
+</head>
+
+<body>
+  <iframe id="course_frame" frameborder="0" scrolling="auto" src=""></iframe>
+</body>
+
+</html>

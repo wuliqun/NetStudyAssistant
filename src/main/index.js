@@ -10,7 +10,7 @@ import  {
   learnCourse,
   seekCourse
 } from './js/api';
-import  { formatCookie,serializeParams } from './js/utils';
+import  { formatCookie,serializeParams,unSerializeObj } from './js/utils';
 let COOKIE = null;
 // courseList[] , currentCourse{}
 
@@ -142,7 +142,8 @@ function intervalLearn(){
   learnTimer = setInterval(() => {
     try{
       seekCourse(learnParams,serializeParams(COOKIE,';'));
-      courseDetail(id,serializeParams(COOKIE,';')).then(percent=>{
+      console.log('---111111111111111111111111111111----')
+      courseDetail(learnParams.courseId,serializeParams(COOKIE,';')).then(percent=>{
         console.log('readCourseProgress,--',percent);
         if(percent === '100.0%'){
           mainWindow.webContents.send('learn-course-finish');
@@ -150,8 +151,11 @@ function intervalLearn(){
         }else{
           mainWindow.webContents.send('learn-course-progress', percent);
         }
-      })
+      });
+      console.log('---2222222222222222222222222222222222----')
     }catch(e){
+      console.log('after 11111111111');
+      console.log(e);
       mainWindow.webContents.send('learn-course-fail');
     }
   }, learnInterval);
@@ -160,7 +164,25 @@ function intervalLearn(){
 ipcMain.on('learn-course',(e,id)=>{
   console.log('learn-course');
   learnCourse(id,serializeParams(COOKIE,';')).then(params=>{
-    learnParams = params;
+    learnParams = params;    
+    let scoCourse,sco,scoStr = params.serialize_sco;
+    if (scoStr == null || scoStr == "null" || scoStr == ""){
+      scoCourse = {};
+    }
+      
+    if (typeof (scoStr) == "string" && (scoStr.indexOf("┛") > -1 || scoStr.indexOf("━") > -1)){
+      scoCourse = unSerializeObj(scoStr);
+    }else if (typeof (scoStr) == "string"){
+      scoCourse = JSON.parse(scoStr)
+    }      
+    let scoId = Object.keys(scoCourse)[0] || "undefind_scoID";
+
+    sco = scoCourse[scoId]
+    if (sco == null || sco == "undefind"){
+      sco = {};
+    }      
+    scoCourse[scoId] = sco;
+    learnParams.serialize_sco = JSON.stringify(scoCourse);
     intervalLearn();
   }).catch(e=>{
     console.log('index.js ---- 165 ERROR',e)

@@ -24,7 +24,7 @@
       </div>
       <div class="btns">
         <a href="javascript:void(0);" class="btn" @click="autoLearn">自动学习</a>
-        <a href="javascript:void(0);" class="btn">一键选课</a>
+        <a href="javascript:void(0);" class="btn" @click="gotoChooseCourse">前往选课</a>
       </div>
       <div class="tip" :class="{red:!completedTotal}">
         <i class="icon" :class="`icon-${completedTotal ? 'finish':'unfinish'}`"></i>
@@ -61,7 +61,7 @@
         <div class="tabs">
           <a
             href="javascript:void(0);"
-            :class="`tab${tabIndex === 0 ? ' active' :''}${!hasForced ? ' disabled':''}`"
+            :class="`tab${tabIndex === 0 ? ' active' :''}`"
             @click="tab(0)"
           >必修课</a>
           <a
@@ -90,7 +90,11 @@
             </div>
             <a href="javascript:void(0);" class="learn-btn" @click="startLearn(index)">开始学习</a>
           </div>
-          <div class="empty" v-if="list.length === 0">当前没有已选择课程,可点击左边一键选课</div>
+          <div class="empty" v-if="courses.fetched && list.length === 0">当前没有{{ ['必修','选修','已完成'][tabIndex] }}课程</div>
+          <div class="loading" v-if="!courses.fetched">
+            <i class="icon"></i>
+            加载中...
+          </div>
         </div>
         <div class="pagination" v-show="totalPage > 1">
           <a href="javascript:void(0);" class="page" @click="jumpPage(0)">首页</a>
@@ -114,7 +118,7 @@ export default {
   methods: {
     tab(index) {
       if (index === this.tabIndex) return; // 就是当前
-      if (index === 0 && !this.hasForced) return; // 没有必修课
+      this.pageIndex = 0;
       this.tabIndex = index;
     },
     prevPage() {
@@ -139,15 +143,32 @@ export default {
         return ;
       }
       let course = this.list[index];
+      if(!course){
+        this.$toast('FAILED, can not find suitable course ~');
+        return ;
+      }
       this.setCurrentCourse(course);
       ipcRenderer.send('learn-course',course.courseId);
     },
     autoLearn(){
       this.pageIndex = 0;
       this.startLearn(0);
+    },
+    // 前往selectCourse 
+    gotoChooseCourse(){
+      this.$router.replace({
+        name:'selectCourse'
+      });   
     }
   },
   computed: {
+    courses(){
+      try{
+        return this[['forcedCourses','optionalCourses','completedCourses'][this.tabIndex]];
+      }catch(e){
+        return {fetched:false};
+      }
+    },
     completedTotal() {
       return (
         this.userInfo.ywcbxxs - this.userInfo.yqbxxs >= 0 &&
@@ -157,43 +178,24 @@ export default {
     completedMust() {
       return this.userInfo.ywcbxxs - this.userInfo.yqbxxs >= 0;
     },
-    hasForced() {
-      return this.userData.forcedCourses && this.userData.forcedCourses.length;
-    },
     totalPage() {
-      try {
-        let length =
-          this.tabIndex === 0
-            ? this.userData.forcedCourses.length
-            : this.userData.optionalCourses.length;
-        return Math.ceil(length / this.pageSize);
-      } catch (e) {
-        return 0;
-      }
+      return Math.ceil(this.courses.courses.length / this.pageSize);
     },
     list() {
-      try {
-        let arr =
-          this.tabIndex === 0
-            ? this.userData.forcedCourses
-            : this.userData.optionalCourses;
-        return arr.slice(
-          this.pageIndex * this.pageSize,
-          this.pageIndex * this.pageSize + this.pageSize
-        );
-      } catch (e) {
-        return [];
-      }
+      return this.courses.courses.slice(
+        this.pageIndex * this.pageSize,
+        this.pageIndex * this.pageSize + this.pageSize
+      );
     }
   },
   watch: {
-    hasForced: {
-      handler(val) {
-        if (!val) {
-          this.tabIndex = 1;
+    courses:{
+      handler(val){
+        if(!val.fetched){
+          ipcRenderer.send('get-my-course',['forcedCourses','optionalCourses','completedCourses'][this.tabIndex]);
         }
       },
-      immediate: true
+      immediate:true
     }
   }
 };

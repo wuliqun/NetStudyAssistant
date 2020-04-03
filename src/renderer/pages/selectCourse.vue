@@ -1,7 +1,6 @@
 <template>
   <div class="select">
     <div class="top-cate">
-      <!-- TODO: -->
       <div
         class="cate"
         v-for="(cate,index) in cates"
@@ -57,9 +56,6 @@
 </template>
 <script>
 const { ipcRenderer } = require("electron");
-// TODO: delete
-import categories from "./category.json";
-import courses from "./courses.json";
 export default {
   data() {
     return {
@@ -126,9 +122,7 @@ export default {
     },
   },
   computed: {
-    // TODO:
     cates() {
-      // return categories;
       return this.categories
     },
     units() {
@@ -138,11 +132,7 @@ export default {
         return [];
       }
     },
-    // TODO:
     courses() {
-      // return courses.filter(course=>{
-      //   return course.usercourseid == 0
-      // });
       try{
         return this.units[this.unitIndex].courses.filter(course=>{
           return course.usercourseid == 0
@@ -318,27 +308,4 @@ export default {
     text-decoration: none;
   }
 }
-.loading{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height:200px;
-  font-size: 20px;
-  color:#000;
-  .icon{
-    width:20px;
-    height:20px;
-    margin-right: 3px;
-    background-image: url(../img/loading.png);
-    background-size: 100% 100%;
-    animation:rotate .5s linear infinite;
-  }
-}
-@keyframes rotate{ 
-		0%{transform:rotate(0deg);} 
-		25%{transform:rotate(90deg);} 
-		50%{transform:rotate(180deg);} 
-		75%{transform:rotate(270deg);} 
-		100%{transform:rotate(360deg);} 
-	}
 </style>

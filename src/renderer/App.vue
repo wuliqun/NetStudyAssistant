@@ -13,8 +13,11 @@ export default {
     ipcRenderer.on('updated-learn',(e,data)=>{
       this.setCurrentCourse(data);
     });
-    ipcRenderer.on('user-data',(e,data)=>{
-      this.setUserData(JSON.parse(data));
+    ipcRenderer.on('user-courses',(e,data)=>{
+      this.setMyCourses(JSON.parse(data));
+    });
+    ipcRenderer.on('user-courses-error',(e,type)=>{
+      this.$toast(`获取${ type }课程失败 ~`);
     });
     ipcRenderer.on('login-err',(e,err)=>{
       this.$toast(err);
@@ -47,9 +50,8 @@ export default {
       this.$toast(`学习失败,请重启应用再试 ~`);
     });
     ipcRenderer.on('learn-course-finish',(e)=>{
-      // TODO: 学习完课程
-      let forcedCourses = this.userData.forcedCourses || [];
-      let optionalCourses = this.userData.optionalCourses || [];
+      let forcedCourses = this.forcedCourses.courses;
+      let optionalCourses = this.optionalCourses.courses;
       let index = -1,i,attr = 'forcedCourses';
       for(i = 0;i<forcedCourses.length;i++){
         if(forcedCourses[i].courseId === this.currentCourse.courseId){
@@ -81,7 +83,7 @@ export default {
         attr = 'optionalCourses'
       }
       if(i === -1){
-        let course = this.userData[attr][i];
+        let course = this[attr].courses[i];
         this.setCurrentCourse(course);
         setTimeout(() => {
           ipcRenderer.send('learn-course',course.courseId);

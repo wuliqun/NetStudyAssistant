@@ -3,9 +3,9 @@ const baseUrl = 'http://www.jxgbwlxy.gov.cn';
 const apiUrl = {
   LOGIN: '/portal/login_ajax.do',
   USERINFO: '/portal/checkIsLogin.do',
-  OPTIONALCOURSE: '/student/course_myselect.do',
-  COMPLETEDCOURSE: '/student/course_complete.do',
-  FORCEDCOURSE: '/student/course_will_select.do',
+  OPTIONALCOURSES: '/student/course_myselect.do',
+  COMPLETEDCOURSES: '/student/course_complete.do',
+  FORCEDCOURSES: '/student/course_will_select.do',
   COURSELIST: '/student/course_list.do',
   COURSECATE: '/student/course_category_index.do',
   COURSESELECT: '/student/course_select.do',
@@ -213,7 +213,7 @@ function getOptionalCourseList(subjectId, unitId, cookie) {
     })
   })
 }
-// 选课
+// 选课  TODO:
 function chooseCourse(id, cookie) {
   return new Promise((resolve, reject) => {
     request({
@@ -230,8 +230,10 @@ function chooseCourse(id, cookie) {
       body: serializeParams({ courseId: id })
     }, function (error, response, body) {
       if (!error && response.statusCode == 200) {
+        console.log(`chooseCourse, id:${id}, userCourseId:${body}`);
         resolve(body);
       } else {
+        console.log(`chooseCourse failed, id:${id}`);
         reject(error || response);
       }
     })
@@ -266,7 +268,7 @@ function getCourse(url, params, cookie) {
         Host: 'www.jxgbwlxy.gov.cn',
         Origin: 'http://www.jxgbwlxy.gov.cn',
         Pragma: 'no-cache',
-        Referer: 'http://www.jxgbwlxy.gov.cn/student/course_myselect.do',
+        Referer: 'http://www.jxgbwlxy.gov.cn',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36',
         'Upgrade-Insecure-Requests': 1
       },
@@ -303,81 +305,38 @@ function getCourse(url, params, cookie) {
     return courses;
   }).catch(err => {
     console.log('getUserCourse --- ERROR',err);
-    return [];
+    throw err;
   })
 }
-let optionalCourseParams = {
-  pageType: '${type}',
-  searchType: 2,
-  menu: 'course',
-  pageSize: 200,
-  currentPage: 1
-}
-let completedCourseParams = {
-  pageType: '${type}',
-  searchType: 3,
-  menu: 'course',
-  pageSize: 200,
-  currentPage: 1
-}
-let forcedCourseParams = {
-  pageType: '${type}',
-  searchType: 0,
-  menu: 'course',
-  pageSize: 200,
-  currentPage: 1
-}
-
 // 三种类型的课程
-function getUserData(cookie) {
-  return Promise.all([
-    getCourse(baseUrl + apiUrl.OPTIONALCOURSE, optionalCourseParams, cookie),
-    getCourse(baseUrl + apiUrl.COMPLETEDCOURSE, completedCourseParams, cookie),
-    getCourse(baseUrl + apiUrl.FORCEDCOURSE, forcedCourseParams, cookie)
-  ]).then(res => {
-    let [optionalCourses, completedCourses, forcedCourses] = res;
-    return {
-      optionalCourses,
-      completedCourses,
-      forcedCourses
-    }
-  });
+function getUserCourse(type,cookie) {
+  let searchType = ['forcedCourses','','optionalCourses','completedCourses'].indexOf(type);
+  let url = baseUrl + apiUrl[type.toUpperCase()];
+  let params = {
+    pageType: '${type}',
+    searchType,
+    menu: 'course',
+    pageSize: 200,
+    currentPage: 1
+  }
+  return getCourse(url, params, cookie);
 }
-let learnParams = {
-  callback: 'showData',
-  'uuid': '781177e7-eadb-4cf3-a23f-9efeb093e9f3',
-  'id': 74143405,
-  serializeSco: '{"0":{"cmi.core.exit":"logout","cmi.core.lesson_location":"356.0","cmi.core.session_time":"00:01:00","cmi.core.entry":"resume","last_learn_time":"2020-04-02 22:20:19"}}',
-  duration: 30000,
-  a: '提交',
-  token: "hLQi24jbf2VeaPQ+N84TjYY5hl2XiSpg+0y7Nt+ph3Y='",
-  uct_id: 6586138,
-  _: 1585836799126
-}
-// callbackUrl: "http://www.jxgbwlxy.gov.cn/portal/study_seek.do"
-// course_name: "《1844年经济学哲学手稿》导读"
-// course_no: "zm1955041"
-// courseware_type: "0"
-// courseware_url: ""
-// serialize_sco: "{"0":{"cmi.core.exit":"logout","cmi.core.lesson_location":"NaN.0","cmi.core.session_time":"00:00:00","cmi.core.entry":"resume"}}"
-// token: "hLQi24jbf2VeaPQ+N84TjYY5hl2XiSpg+0y7Nt+ph3Y="
-// ucid: "74143405"
-// uct_id: "6586138"
-// uuid: "a1c6e9d0-dbe2-4337-87be-1760b2f64dc0"
 
-// 保持学习进度
+// 保持学习进度 TODO:
 function seekCourse(params, cookie) {
   let learnParams = {
     callback: 'showData',
     uuid: params.uuid,
     id: params.ucid,
-    serializeSco: params.serializeSco || '{"0":{}}',
+    serializeSco: params.serializeSco || '{"0":{}}', // ??
     duration: 30000,
     a: '提交',
     token: params.token,
     uct_id: params.uct_id,
     _: Date.now()
   }
+  console.log('learnParams-------',learnParams);
+  console.log(encodeURIComponent(serializeParams(learnParams)));
   return new Promise((resolve, reject) => {
     request({
       url: baseUrl + apiUrl.COURSESEEK + '?' + encodeURIComponent(serializeParams(learnParams)),
@@ -392,7 +351,7 @@ function seekCourse(params, cookie) {
         Referer: 'www.jxgbwlxy.gov.cn',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36'
       },
-      gzip: true,
+      gzip:true
     }, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         console.log('seekCourse---',body);
@@ -405,10 +364,13 @@ function seekCourse(params, cookie) {
   })
 }
 function learnCourse(id, cookie) {
-  return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie).then(res => {
-    let $ = cheerio.load(res);
+  console.log('API-- learnCourse',id);
+  return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie,true).then(res => {
+    let $ = cheerio.load(res);    
     let params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
     return params;
+  },err=>{
+    console.log('learn error------',err);
   });
 }
 
@@ -416,7 +378,7 @@ export {
   login,
   fetchHtml,
   getUserInfo,
-  getUserData,
+  getUserCourse,
   getOptionalCoursesCategories,
   getOptionalCourseList,
   chooseCourse,

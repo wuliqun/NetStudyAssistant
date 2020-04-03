@@ -34,7 +34,6 @@ export default {
       next(vm=>{
         vm.stopLearn();
         vm.setUserInfo({});
-        vm.setUserData({});
       });
       return ;
     }

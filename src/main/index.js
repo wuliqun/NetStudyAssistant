@@ -2,7 +2,7 @@ import { app, BrowserWindow,Menu,ipcMain } from 'electron'
 import  {
   login,
   getUserInfo,
-  getUserData,
+  getUserCourse,
   getOptionalCoursesCategories,
   getOptionalCourseList,
   chooseCourse,
@@ -13,7 +13,6 @@ import  {
 import  { formatCookie,serializeParams } from './js/utils';
 let COOKIE = null;
 // courseList[] , currentCourse{}
-let userData = null;
 
 /**
  * Set `__static` path to static files in production
@@ -72,14 +71,6 @@ ipcMain.on('login', (e, arg) => {
   }).then(res=>{
     if(res !== '0'){
       mainWindow.webContents.send('user-info', res);
-      getUserData(serializeParams(COOKIE,';')).then(res=>{
-        userData = res;
-        console.log('userData---',res);
-        mainWindow.webContents.send('user-data', JSON.stringify(res));
-      }).catch(err=>{
-        console.log('-------------index.js 73  ERROR -----------------');
-        console.log(err);
-      })
     }else{
       throw '登陆失败';
     }    
@@ -105,7 +96,6 @@ ipcMain.on('update-learn', (e, arg) => {
 // 退出
 ipcMain.on('logout', (e) => {
   COOKIE = null;
-  userData = null;
 });
 
 // 获取课程分类
@@ -172,6 +162,19 @@ ipcMain.on('learn-course',(e,id)=>{
     learnParams = params;
     intervalLearn();
   }).catch(e=>{
-    console.log('index.js ---- 170 ERROR',e)
+    console.log('index.js ---- 165 ERROR',e)
   });
+});
+
+// 个人课程
+ipcMain.on('get-my-course',(e,type)=>{
+  console.log('get-my-course');
+  getUserCourse(type,serializeParams(COOKIE,';')).then(res=>{
+    mainWindow.webContents.send('user-courses',JSON.stringify({
+      type,
+      courses:res
+    }));
+  },err=>{
+    mainWindow.webContents.send('user-courses-error',type);
+  })
 });

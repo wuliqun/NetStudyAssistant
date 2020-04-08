@@ -23,7 +23,22 @@ export default {
       this.$toast(err);
     });
     ipcRenderer.on('user-info',(e,userInfo)=>{
-      this.setUserInfo(JSON.parse(userInfo));
+      let user = JSON.parse(userInfo);
+      this.setUserInfo(user);
+      let users = JSON.parse(localStorage.getItem('users') || '[]');
+      let index = -1,i;
+      for(i=0;i<users.length;i++){
+        if(users[i].username === user.username){
+          index = i;
+          break;
+        }
+      }
+      if(index !== -1){
+        users.splice(index,1);
+      }
+      users.unshift(user);
+
+      localStorage.setItem('users',JSON.stringify(users));
       this.$router.replace({
         name:'index'
       })

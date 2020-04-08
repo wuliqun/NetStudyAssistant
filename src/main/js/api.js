@@ -5,12 +5,14 @@ const apiUrl = {
   USERINFO: '/portal/checkIsLogin.do',
   OPTIONALCOURSES: '/student/course_myselect.do',
   COMPLETEDCOURSES: '/student/course_complete.do',
-  FORCEDCOURSES: '/student/course_will_select.do',
+  FORCEDCOURSES: '/student/course_myrequired.do',
+  WILLCOURSE: '/student/course_will_select.do',
   COURSELIST: '/student/course_list.do',
   COURSECATE: '/student/course_category_index.do',
   COURSESELECT: '/student/course_select.do',
   COURSEDETAIL: '/portal/course_detail.do',
-  COURSELEARN: '/portal/study_play.do'
+  COURSELEARN: '/portal/study_play.do',
+  COURSESELECTREQUIRE: '/student/course_select_required.do', // 必修课程选择
 }
 import {
   serializeParams
@@ -313,9 +315,112 @@ function getCourse(url, params, cookie) {
     throw err;
   })
 }
+// 选择必修课
+function chooseRequiredCourse(courseId, assignId, cookie) {
+  let params = serializeParams({
+    courseId,
+    assign_id: assignId
+  })
+  return new Promise((resolve, reject) => {
+    request({
+      url: baseUrl + apiUrl.COURSESELECTREQUIRE,
+      method: "POST",
+      headers: {
+        Accept: '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Cookie: cookie,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept-Encoding': 'gzip, deflate',
+        Connection: 'keep-alive',
+        'Content-Length': params.length,
+        Host: 'www.jxgbwlxy.gov.cn',
+        Origin: 'http://www.jxgbwlxy.gov.cn',
+        Referer: 'http://www.jxgbwlxy.gov.cn/student/course_will_select.do?searchType=0&menu=course'
+      },
+      body: params
+    }, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        resolve(body);
+      } else {
+        console.log('CHOOSE REQUIRED COURSE FAILED! ',error);
+        resolve();
+      }
+    })
+  });
+}
+// 获取当前是否有必修课程
+function getWillCourse(cookie) {
+  let params = {
+    pageType: '${type}',
+    searchType: 0,
+    menu: 'course',
+    pageSize: 100,
+    currentPage: 1
+  }
+  return new Promise((resolve, reject) => {
+    request({
+      url: baseUrl + apiUrl.WILLCOURSE,
+      method: "POST",
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Content-Length': serializeParams(params).length,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Cookie: cookie,
+        Host: 'www.jxgbwlxy.gov.cn',
+        Origin: 'http://www.jxgbwlxy.gov.cn',
+        Pragma: 'no-cache',
+        Referer: 'http://www.jxgbwlxy.gov.cn',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36',
+        'Upgrade-Insecure-Requests': 1
+      },
+      gzip: true,
+      body: serializeParams(params)
+    }, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        resolve(body);
+      } else {
+        reject(error || response);
+      }
+    })
+  }).then(body => {
+    let $ = cheerio.load(body);
+    let courses = [];
+    $('.hoz_course_list .hoz_course_row').each(function () {
+      let img = $(this).find('.hoz_c_lf img').attr('src');
+      let courseName = $(this).find('.hoz_course_name a').text();
+      let time = parseInt($(this).find('.hoz_four_info span:first-child').text());
+      let studyHours = parseFloat($(this).find('.hoz_four_info span:nth-child(2)').text());
+      let courseLinkId = $(this).find('.hoz_course_name a').attr('href').match(/(\d+)$/)[1];
+      let courseId = $(this).find('.btn_group a').attr('onclick').match(/\((\d+)/)[1];
+      courses.push({
+        img,
+        courseName,
+        time,
+        studyHours,
+        courseId,
+        courseLinkId
+      });
+    });
+    console.log('WILL COURSES,', courses)
+    // 自动选择
+    let promises = [];
+    courses.forEach(course => {
+      promises.push(chooseRequiredCourse(course.courseLinkId, course.courseId, cookie));
+    })
+    return Promise.all(promises);
+  }).catch(err => {
+    console.log('getWillCourse --- ERROR', err);
+    throw err;
+  })
+}
 // 三种类型的课程
 function getUserCourse(type, cookie) {
-  let searchType = ['forcedCourses', '', 'optionalCourses', 'completedCourses'].indexOf(type);
+  let searchType = ['', 'forcedCourses', 'optionalCourses', 'completedCourses'].indexOf(type);
   let url = baseUrl + apiUrl[type.toUpperCase()];
   let params = {
     pageType: '${type}',
@@ -349,5 +454,6 @@ export {
   getOptionalCourseList,
   chooseCourse,
   courseDetail,
-  learnCourse
+  learnCourse,
+  getWillCourse
 }

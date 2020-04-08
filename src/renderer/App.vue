@@ -22,7 +22,8 @@ export default {
     ipcRenderer.on('login-err',(e,err)=>{
       this.$toast(err);
     });
-    ipcRenderer.on('user-info',(e,userInfo)=>{
+    ipcRenderer.on('login-wait',(e,userInfo)=>{
+      this.$toast('登录成功,等待跳转...');
       let user = JSON.parse(userInfo);
       this.setUserInfo(user);
       let users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -39,6 +40,8 @@ export default {
       users.unshift(user);
 
       localStorage.setItem('users',JSON.stringify(users));
+    });
+    ipcRenderer.on('user-info',(e)=>{
       this.$router.replace({
         name:'index'
       })
@@ -62,7 +65,7 @@ export default {
       this.setCurrentCoursePercent(percent);
     });
     ipcRenderer.on('learn-course-fail',(e,data)=>{
-      this.$toast(`学习失败,请重启应用再试 ~`);
+      this.$toast(data || `学习失败,请重启应用再试 ~`);
     });
     ipcRenderer.on('learn-course-finish',(e)=>{
       let forcedCourses = this.forcedCourses.courses;

@@ -35,7 +35,7 @@
             </div>
           </div>
         </div>
-        <a href="javascript:void(0);" class="learn-btn" @click="startLearn(index)">开始学习</a>
+        <a href="javascript:void(0);" class="learn-btn" @click="startLearn(index)" v-show="tabIndex !== 2">开始学习</a>
       </div>
       <div class="empty" v-if="courses.fetched && list.length === 0">当前没有{{ ['必修','选修','已完成'][tabIndex] }}课程</div>
       <div class="loading" v-if="!courses.fetched">
@@ -85,6 +85,7 @@ export default {
     },
     startLearn(index) {
       if(this.learning){
+        this.$toast('已在学习中... ');
         return ;
       }
       let course = this.list[index];

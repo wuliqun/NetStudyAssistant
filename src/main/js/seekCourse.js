@@ -16,7 +16,7 @@ function learnCourse(id, cookie) {
     params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
     referer = $('#course_frm').attr('src');
     console.log(params);
-    getConfig(params, cookie);
+    // getConfig(params, cookie);
     return $('body').attr('onbeforeunload').match(/(\d+)/)[1];
   }, err => {
     console.log('learn error------', err);
@@ -59,10 +59,10 @@ function seekCourse(cookie) {
     callback: 'showData',
     uuid: params.uuid,
     id: params.ucid,
-    serializeSco: '',
+    serializeSco: encodeURIComponent(params.serialize_sco),
     duration: 30000,
     a: true,
-    token: params.token,
+    token: encodeURIComponent(params.token),
     uct_id: params.uct_id,
     _: Date.now()
   }
@@ -72,7 +72,6 @@ function seekCourse(cookie) {
       url: url + '?' + serializeParams(learnParams),
       method: "GET",
       headers: {
-        Connection: 'keep-alive',
         Accept: '*/*',
         Host: 'www.jxgbwlxy.gov.cn',
         'Accept-Encoding': 'gzip, deflate',
@@ -83,18 +82,14 @@ function seekCourse(cookie) {
       },
       gzip: true
     }, function (error, response, body) {
-      console.log('seek-course');
-      console.log(error);
-      console.log(body, '--', body.length);
-      console.log(response.statusCode);
-      // if (!error && response.statusCode == 200) {
-      //   console.log('seekCourse---',body);
-      //   resolve(body);
-      // } else {
-      //   console.log('seekCourse---ERROR',error);
-      //   reject(error || body);
-      // }
-      resolve();
+      console.log('error,',error);
+      console.log('response,',response.statusCode);
+      console.log('body,',body);
+      if(typeof body === 'string' && body.indexOf('success') !== -1){
+        resolve();
+      }else{
+        reject('学习失败,请更换课程尝试 ~');
+      }      
     })
   })
 }

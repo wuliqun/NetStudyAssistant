@@ -6,7 +6,8 @@ import  {
   getOptionalCoursesCategories,
   getOptionalCourseList,
   chooseCourse,
-  courseDetail    
+  courseDetail,
+  getWillCourse
 } from './js/api';
 import {
   seekCourse,
@@ -75,8 +76,13 @@ ipcMain.on('login', (e, arg) => {
       let userinfo = JSON.parse(res);
       let p = arg.split('&');
       userinfo.username = p[0].split('=')[1];
-      userinfo.password = p[1].split('=')[1];
-      mainWindow.webContents.send('user-info', JSON.stringify(userinfo));
+      userinfo.password = p[1].split('=')[1];   
+      mainWindow.webContents.send('login-wait',JSON.stringify(userinfo));
+      // 登录成功后   首先检查是否有必修课, 如果有 自动选择
+      getWillCourse(serializeParams(COOKIE,';')).finally(()=>{
+        // 选完必修课后, 在跳转登录
+        mainWindow.webContents.send('user-info');
+      })
     }else{
       throw '登陆失败';
     }    
@@ -135,7 +141,7 @@ ipcMain.on('choose-course',(e,arg)=>{
 });
 
 let learnTimer = null,
-    learnInterval = 28000;
+    learnInterval = 29000;
 
 function intervalLearn(id){
   if(learnTimer) clearInterval(learnTimer);
@@ -147,13 +153,14 @@ function intervalLearn(id){
         if(percent === '100.0%'){
           mainWindow.webContents.send('learn-course-finish');
           clearInterval(learnTimer);
-        }else{
+        }else{          
           mainWindow.webContents.send('learn-course-progress', percent);
         }
       });
     }catch(e){
       console.log(e);
-      mainWindow.webContents.send('learn-course-fail');
+      clearInterval(learnTimer);
+      mainWindow.webContents.send('learn-course-fail',e);
     }
   }, learnInterval);
 }

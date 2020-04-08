@@ -1,5 +1,5 @@
 <template>
-  <div class="login">
+  <div class="login" @click="showUserTip = false">
     <div class="header">
       <p class="log-txt">登录</p>
       <div class="logo">
@@ -10,6 +10,13 @@
       <div class="line">
         <div class="label">账号:</div>
         <input type="text" class="input" name="username" v-model="username" />
+        <i class="arrow-down" @click.stop="showUserTip = !showUserTip"></i>
+        <div class="user-tip" v-if="showUserTip" @click.stop>
+          <div class="user" v-for="user in users" :key="user.username" @click="chooseUser(user)">
+            <p class="name">{{ user.username }}</p>
+            <p class="nick">{{ user.realname }}</p>
+          </div>
+        </div>
       </div>
       <div class="line">
         <div class="label">密码:</div>
@@ -39,14 +46,27 @@ export default {
     }
     next();
   },
-  data(){
-    return{
-      username:'362203197702021945',
-      password:'Ww770202'
+  created(){
+    // localStorage.setItem('users',JSON.stringify([
+    //   {
+    //     username:'362203197702021945',
+    //     password:'Ww770202',
+    //     nickname:'习薇薇'
+    //   }
+    // ]))
+    this.users = JSON.parse(localStorage.getItem('users') || '[]');
+    if(this.users.length){
+      this.username = this.users[0].username;
+      this.password = this.users[0].password;           
     }
   },
-  created(){
-    
+  data(){
+    return{
+      username:'',
+      password:'',
+      users:[],
+      showUserTip:false
+    }
   },
   methods:{
     submit(){
@@ -58,6 +78,11 @@ export default {
         return ;
       }
       ipcRenderer.send('login',`username=${username}&passwd=${password}`);      
+    },
+    chooseUser(user){
+      this.username = user.username;
+      this.password = user.password;
+      this.showUserTip = false;
     }
   }
 };
@@ -123,6 +148,7 @@ export default {
   }
 }
 .line {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -131,6 +157,47 @@ export default {
   font-size: 16px;
   line-height: 30px;
   border-bottom: 1px solid #ccc;
+}
+.arrow-down{
+  position: absolute;
+  top:10px;
+  right:10px;
+  width:30px;
+  height:30px;
+  background-image: url(../img/arrow-down.png);
+  background-size: 100% 100%;
+}
+.user-tip{
+  position: absolute;
+  z-index:5;
+  top:48px;
+  left:80px;
+  right:10px;
+  text-indent: 5px;
+  color: #171717;
+  font-weight: 700;
+  font-size: 16px;
+  background-color: #e0e0e0;
+  .user{
+    padding:5px 0;
+    cursor: pointer;
+    border-bottom:1px solid #333;
+    &:hover{
+      background-color: #ccc;
+    }
+    &:last-child{
+      border-bottom: 0;
+    }
+  }
+  .name{
+    line-height: 20px;
+  }
+  .nick{
+    line-height: 18px;
+    font-size: 14px;
+    color:#666;
+  }
+
 }
 .line .label {
   color: #171717;

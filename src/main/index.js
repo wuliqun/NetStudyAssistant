@@ -72,7 +72,11 @@ ipcMain.on('login', (e, arg) => {
     return getUserInfo(serializeParams(COOKIE,';'));
   }).then(res=>{
     if(res !== '0'){
-      mainWindow.webContents.send('user-info', res);
+      let userinfo = JSON.parse(res);
+      let p = arg.split('&');
+      userinfo.username = p[0].split('=')[1];
+      userinfo.password = p[1].split('=')[1];
+      mainWindow.webContents.send('user-info', JSON.stringify(userinfo));
     }else{
       throw '登陆失败';
     }    

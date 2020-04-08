@@ -1,0 +1,257 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="keywords" content="国家行政学院音像出版社,领导干部言语表达艺术">
+  <meta http-equiv="description" content="国家行政学院音像出版社">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>《领导干部言语表达艺术》（上）</title>
+
+  <script type="text/javascript">
+    /*
+     * 适应Scorm1.2 API的非标适配器
+     */
+
+    var findAPITries = 0;
+    /*******************************************************************************
+     **
+     ** Function findAPI(win)
+     ** Inputs:  win - a Window Object
+     ** Return:  If an API object is found, it's returned, otherwise null is returned
+     **
+     ** Description:
+     ** This function looks for an object named API in parent and opener windows
+     **
+     *******************************************************************************/
+    function findAPI(win) {
+      findAPITries = 0;
+      while ((win.API == null) && (win.parent != null) && (win.parent != win)) {
+        findAPITries++;
+        // Note: 7 is an arbitrary number, but should be more than sufficient
+        if (findAPITries > 7) {
+          console.error("Error finding API -- too deeply nested.");
+          return null;
+        }
+
+        win = win.parent;
+
+      }
+      return win.API;
+    }
+
+
+
+    /*******************************************************************************
+     **
+     ** Function getAPI()
+     ** Inputs:  none
+     ** Return:  If an API object is found, it's returned, otherwise null is returned
+     **
+     ** Description:
+     ** This function looks for an object named API, first in the current window's 
+     ** frame hierarchy and then, if necessary, in the current window's opener window
+     ** hierarchy (if there is an opener window).
+     **
+     *******************************************************************************/
+    function getAPI() {
+      var theAPI = findAPI(window);
+      if ((theAPI == null) && (window.opener != null) && (typeof (window.opener) != "undefined")) {
+        theAPI = findAPI(window.opener);
+      }
+      if (theAPI == null) {
+        console.error("Unable to find an API adapter");
+      }
+      return theAPI
+    }
+
+
+    // 课件封面停留5秒钟自动开始继续学习
+    window.setTimeout("autoPlay()", 10000);
+
+    function autoPlay() {
+      if (typeof (redir) == "function") {
+        redir(1, 1);
+      }
+    }
+
+
+
+    function getCookie(name) {
+      var result = null;
+      var myCookie = document.cookie + ";";
+      var searchName = name + "=";
+      var startOfCookie = myCookie.indexOf(searchName);
+      var endOfCookie;
+      if (startOfCookie != -1) {
+        startOfCookie += searchName.length;
+        endOfCookie = myCookie.indexOf(";", startOfCookie);
+        result = unescape(myCookie.substring(startOfCookie, endOfCookie));
+      }
+      return result;
+    }
+
+    function setContinueStudy(s) {
+      if (s != null) {
+        document.cookie = "continueStudy=1";
+      } else
+        document.cookie = "continueStudy=0";
+    }
+
+    function continueStudy() {
+      try {
+        var s = getCookie("continueStudy");
+        if (s == 1) {
+          var progress = getAPI().LMSGetValue("cmi.core.lesson_location");
+          window.setTimeout("SyncStreams.seek(" + progress + ")", 1000);
+        }
+      } catch (ex) {}
+    }
+
+    function doQuit() {
+      try {
+        if (MainStream.stream_pos != 0) {
+          getAPI().LMSSetValue("cmi.core.lesson_location", Math.floor(MainStream.stream_pos));
+          getAPI().LMSCommit();
+          getAPI().LMSFinish();
+        }
+      } catch (ex) {}
+    }
+    getAPI().LMSInitialize("");
+    window.onbeforeunload = doQuit;
+    window.onunload = doQuit;
+    window.onerror = function () {
+      return true;
+    };
+  </script>
+  <link href="Styles/index.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+    td img {
+      display: block;
+    }
+
+    .STYLE1 {
+      font-size: 12px
+    }
+  </style>
+  <script type="text/javascript">
+    <!--
+    function MM_swapImgRestore() { //v3.0
+      var i, x, a = document.MM_sr;
+      for (i = 0; a && i < a.length && (x = a[i]) && x.oSrc; i++) x.src = x.oSrc;
+    }
+
+    function MM_preloadImages() { //v3.0
+      var d = document;
+      if (d.images) {
+        if (!d.MM_p) d.MM_p = new Array();
+        var i, j = d.MM_p.length,
+          a = MM_preloadImages.arguments;
+        for (i = 0; i < a.length; i++)
+          if (a[i].indexOf("#") != 0) {
+            d.MM_p[j] = new Image;
+            d.MM_p[j++].src = a[i];
+          }
+      }
+    }
+
+    function MM_findObj(n, d) { //v4.01
+      var p, i, x;
+      if (!d) d = document;
+      if ((p = n.indexOf("?")) > 0 && parent.frames.length) {
+        d = parent.frames[n.substring(p + 1)].document;
+        n = n.substring(0, p);
+      }
+      if (!(x = d[n]) && d.all) x = d.all[n];
+      for (i = 0; !x && i < d.forms.length; i++) x = d.forms[i][n];
+      for (i = 0; !x && d.layers && i < d.layers.length; i++) x = MM_findObj(n, d.layers[i].document);
+      if (!x && d.getElementById) x = d.getElementById(n);
+      return x;
+    }
+
+    function redir(sFromBegin, s) {
+      if (typeof (setContinueStudy) == "function") {
+        setContinueStudy(s);
+      }
+
+      location.href = "XueXi.htm?" + sFromBegin + "video";
+    }
+
+    function MM_swapImage() { //v3.0
+      var i, j = 0,
+        x, a = MM_swapImage.arguments;
+      document.MM_sr = new Array;
+      for (i = 0; i < (a.length - 2); i += 3)
+        if ((x = MM_findObj(a[i])) != null) {
+          document.MM_sr[j++] = x;
+          if (!x.oSrc) x.oSrc = x.src;
+          x.src = a[i + 2];
+        }
+    }
+    //
+    -->
+  </script>
+</head>
+
+<body onLoad="MM_preloadImages('images/enter-red.gif','images/goon-red.gif')">
+  <div id="main">
+    <table border="0" cellpadding="0" cellspacing="0" width="700">
+      <!-- fwtable fwsrc="index很多人700x475 拷贝.png" fwbase="images.jpg" fwstyle="Dreamweaver" fwdocid = "1231884801" fwnested="0" -->
+      <tr>
+        <td><img src="images/spacer.gif" width="165" height="1" border="0" alt="" /></td>
+        <td><img src="images/spacer.gif" width="370" height="1" border="0" alt="" /></td>
+        <td><img src="images/spacer.gif" width="165" height="1" border="0" alt="" /></td>
+        <td><img src="images/spacer.gif" width="1" height="1" border="0" alt="" /></td>
+      </tr>
+      <tr>
+        <td><img name="images_r1_c1" src="images/images_r1_c1.jpg" width="165" height="195" border="0" id="images_r1_c1"
+            alt="" /></td>
+        <td><img name="images_r1_c2" src="images/images_r1_c2.jpg" width="370" height="195" border="0" id="images_r1_c2"
+            alt="" /></td>
+        <td><img name="images_r1_c3" src="images/images_r1_c3.jpg" width="165" height="195" border="0" id="images_r1_c3"
+            alt="" /></td>
+        <td><img src="images/spacer.gif" width="1" height="195" border="0" alt="" /></td>
+      </tr>
+      <tr>
+        <td><img name="images_r2_c1" src="images/images_r2_c1.jpg" width="165" height="185" border="0" id="images_r2_c1"
+            alt="" /></td>
+        <td><img name="images_r2_c2" src="images/images_r2_c2.jpg" width="370" height="185" border="0" id="images_r2_c2"
+            alt="" /></td>
+        <td><img name="images_r2_c3" src="images/images_r2_c3.jpg" width="165" height="185" border="0" id="images_r2_c3"
+            alt="" /></td>
+        <td><img src="images/spacer.gif" width="1" height="185" border="0" alt="" /></td>
+      </tr>
+      <tr>
+        <td colspan="3" bgcolor="#FFFFFF">
+          <table width="400" border="0" align="center" cellpadding="0" cellspacing="0">
+            <form name="myform" id="myform">
+              <tr>
+                <td>
+                  <div align="center"><a href="#" onClick="redir(1,1)" onMouseOut="MM_swapImgRestore()"
+                      onMouseOver="MM_swapImage('Image1011','','images/goon-red.gif',1)"><img src="images/goon-gray.gif"
+                        name="Image1011" border="0" id="Image1011" /></a></div>
+                </td>
+                <td>
+                  <div align="center"></div>
+                </td>
+                <td>
+                  <div align="center"><a href="#" onClick="redir(1)" onMouseOut="MM_swapImgRestore()"
+                      onMouseOver="MM_swapImage('Image1001','','images/enter-red.gif',1)"><img
+                        src="images/enter-gray.gif" name="Image1001" border="0" id="Image1001" /></a></div>
+                </td>
+              </tr>
+            </form>
+          </table>
+        </td>
+        <td><img src="images/spacer.gif" width="1" height="73" border="0" alt="" /></td>
+      </tr>
+      <tr>
+        <td colspan="3" valign="top" bgcolor="#FFFFFF">
+          <div align="center" class="STYLE1">国家行政学院音像出版社出品　　欢迎访问：中国公务员培训网　　<a href="http://www.gwypx.com.cn"
+              target="_blank" class="tip">http://www.gwypx.com.cn</a></div>
+        </td>
+        <td><img src="images/spacer.gif" width="1" height="22" border="0" alt="" /></td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>

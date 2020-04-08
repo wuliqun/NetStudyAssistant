@@ -1,4 +1,4 @@
-const request = require('request');
+import request from 'request';
 const baseUrl = 'http://www.jxgbwlxy.gov.cn';
 const apiUrl = {
   LOGIN: '/portal/login_ajax.do',
@@ -10,8 +10,7 @@ const apiUrl = {
   COURSECATE: '/student/course_category_index.do',
   COURSESELECT: '/student/course_select.do',
   COURSEDETAIL: '/portal/course_detail.do',
-  COURSELEARN: '/portal/study_play.do',
-  COURSESEEK: '/portal/study_seek.do'
+  COURSELEARN: '/portal/study_play.do'
 }
 import {
   serializeParams
@@ -223,7 +222,7 @@ function chooseCourse(id, cookie) {
         Accept: '*/*',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         Origin: 'http://www.jxgbwlxy.gov.cn',
-        Cookie:cookie,
+        Cookie: cookie,
         Referer: 'http://www.jxgbwlxy.gov.cn/student/course_category_index.do?menu=mall&categoryId=2',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest'
@@ -250,7 +249,7 @@ function courseDetail(id, cookie) {
   return fetchHtml(`${baseUrl}${apiUrl.COURSEDETAIL}?${serializeParams({
     menu: 'mall',
     courseId: id
-  })}`,cookie,true).then(res => {
+  })}`, cookie, true).then(res => {
     let $ = cheerio.load(res);
     return $('.cse_dtl_pro_percent').text();
   }).catch(e => {
@@ -310,13 +309,13 @@ function getCourse(url, params, cookie) {
     });
     return courses;
   }).catch(err => {
-    console.log('getUserCourse --- ERROR',err);
+    console.log('getUserCourse --- ERROR', err);
     throw err;
   })
 }
 // 三种类型的课程
-function getUserCourse(type,cookie) {
-  let searchType = ['forcedCourses','','optionalCourses','completedCourses'].indexOf(type);
+function getUserCourse(type, cookie) {
+  let searchType = ['forcedCourses', '', 'optionalCourses', 'completedCourses'].indexOf(type);
   let url = baseUrl + apiUrl[type.toUpperCase()];
   let params = {
     pageType: '${type}',
@@ -328,58 +327,16 @@ function getUserCourse(type,cookie) {
   return getCourse(url, params, cookie);
 }
 
-// 保持学习进度 TODO:  unfinish
-function seekCourse(params, cookie) {
-  let learnParams = {
-    callback: 'showData',
-    uuid: params.uuid,
-    id: params.ucid,
-    serializeSco: encodeURIComponent(params.serialize_sco),
-    duration: 30000,
-    a: true,
-    token: params.token,
-    uct_id: params.uct_id,
-    _: Date.now()
-  }
-  console.log('learnParams-------',learnParams);
-  console.log(baseUrl + apiUrl.COURSESEEK + '?' + serializeParams(learnParams));
-  return new Promise((resolve, reject) => {
-    request({
-      url: baseUrl + apiUrl.COURSESEEK + '?' + serializeParams(learnParams),
-      method: "GET",
-      dataType: "jsonp",
-      headers: {
-        Accept: '*/*',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
-        Connection: 'keep-alive',
-        Cookie: cookie,
-        Host: 'www.jxgbwlxy.gov.cn',
-        Referer: 'www.jxgbwlxy.gov.cn',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36'
-      },
-      gzip:true
-    }, function (error, response, body) {
-      // if (!error && response.statusCode == 200) {
-      //   console.log('seekCourse---',body);
-      //   resolve(body);
-      // } else {
-      //   console.log('seekCourse---ERROR',error);
-      //   reject(error || body);
-      // }
-      resolve();
-    })
-  })
-}
 function learnCourse(id, cookie) {
-  console.log('API-- learnCourse',id);
-  return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie,true).then(res => {
-    let $ = cheerio.load(res);    
+  console.log('API-- learnCourse', id);
+  return fetchHtml(`${baseUrl}${apiUrl.COURSELEARN}?id=${id}`, cookie, true).then(res => {
+    let $ = cheerio.load(res);
     let params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
+    params.referer = $('#course_frm').attr('src');
     params.courseId = $('body').attr('onbeforeunload').match(/(\d+)/)[1];
     return params;
-  },err=>{
-    console.log('learn error------',err);
+  }, err => {
+    console.log('learn error------', err);
   });
 }
 
@@ -392,6 +349,5 @@ export {
   getOptionalCourseList,
   chooseCourse,
   courseDetail,
-  learnCourse,
-  seekCourse
+  learnCourse
 }

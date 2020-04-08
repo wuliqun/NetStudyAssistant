@@ -6,10 +6,12 @@ import  {
   getOptionalCoursesCategories,
   getOptionalCourseList,
   chooseCourse,
-  courseDetail,
-  learnCourse,
-  seekCourse
+  courseDetail    
 } from './js/api';
+import {
+  seekCourse,
+  learnCourse
+} from './js/seekCourse';
 import  { formatCookie,serializeParams,unSerializeObj } from './js/utils';
 let COOKIE = null;
 // courseList[] , currentCourse{}
@@ -93,11 +95,6 @@ ipcMain.on('update-learn', (e, arg) => {
   mainWindow.center();
 });
 
-// 退出
-ipcMain.on('logout', (e) => {
-  COOKIE = null;
-});
-
 // 获取课程分类
 ipcMain.on('get-category', (e) => {
   console.log('get-category')
@@ -133,17 +130,15 @@ ipcMain.on('choose-course',(e,arg)=>{
   });
 });
 
-let learnParams = null,
-    learnTimer = null,
+let learnTimer = null,
     learnInterval = 28000;
 
-function intervalLearn(){
+function intervalLearn(id){
   if(learnTimer) clearInterval(learnTimer);
   learnTimer = setInterval(() => {
     try{
-      seekCourse(learnParams,serializeParams(COOKIE,';'));
-      console.log('---111111111111111111111111111111----')
-      courseDetail(learnParams.courseId,serializeParams(COOKIE,';')).then(percent=>{
+      seekCourse(serializeParams(COOKIE,';'));
+      courseDetail(id,serializeParams(COOKIE,';')).then(percent=>{
         console.log('readCourseProgress,--',percent);
         if(percent === '100.0%'){
           mainWindow.webContents.send('learn-course-finish');
@@ -152,9 +147,7 @@ function intervalLearn(){
           mainWindow.webContents.send('learn-course-progress', percent);
         }
       });
-      console.log('---2222222222222222222222222222222222----')
     }catch(e){
-      console.log('after 11111111111');
       console.log(e);
       mainWindow.webContents.send('learn-course-fail');
     }
@@ -163,27 +156,8 @@ function intervalLearn(){
 // 上课
 ipcMain.on('learn-course',(e,id)=>{
   console.log('learn-course');
-  learnCourse(id,serializeParams(COOKIE,';')).then(params=>{
-    learnParams = params;    
-    let scoCourse,sco,scoStr = params.serialize_sco;
-    if (scoStr == null || scoStr == "null" || scoStr == ""){
-      scoCourse = {};
-    }
-      
-    if (typeof (scoStr) == "string" && (scoStr.indexOf("┛") > -1 || scoStr.indexOf("━") > -1)){
-      scoCourse = unSerializeObj(scoStr);
-    }else if (typeof (scoStr) == "string"){
-      scoCourse = JSON.parse(scoStr)
-    }      
-    let scoId = Object.keys(scoCourse)[0] || "undefind_scoID";
-
-    sco = scoCourse[scoId]
-    if (sco == null || sco == "undefind"){
-      sco = {};
-    }      
-    scoCourse[scoId] = sco;
-    learnParams.serialize_sco = JSON.stringify(scoCourse);
-    intervalLearn();
+  learnCourse(id,serializeParams(COOKIE,';')).then(courseId=>{    
+    intervalLearn(courseId);
   }).catch(e=>{
     console.log('index.js ---- 165 ERROR',e)
   });
@@ -200,4 +174,10 @@ ipcMain.on('get-my-course',(e,type)=>{
   },err=>{
     mainWindow.webContents.send('user-courses-error',type);
   })
+});
+
+// 退出
+ipcMain.on('logout', (e) => {
+  COOKIE = null;
+  clearInterval(learnTimer);
 });

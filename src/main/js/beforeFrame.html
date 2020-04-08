@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>课程清单</title>
+  <meta http-equiv="keywords" content="课件清单">
+  <meta http-equiv="description" content="课件清单">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="css/index.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+  <script type="text/javascript" src="js/json2.js"></script>
+  <script type="text/javascript">
+    window.history.go(1);
+    var coursePath = "course/";
+    var param = $.GetQueryString("param");
+    var playBtn =
+      "<a href='{0}'><img style='cursor:pointer;width:23px;height:23px;margin-top:8px' src='images/play.png' /></a>";
+    var tableTr = "<tr><td style='text-align: left;padding-left:{2}px'>{0}</td><td>{1}</td></tr>";
+    var playUrl = "play.html?scoId={0}&playUrl={1}&param=" + encodeURIComponent(param);
+    if (param == null || param == "") {
+      alert('参数异常，请关闭此页面重新点击播放课件。');
+      window.close();
+    } else {
+      var course = JSON.parse(param);
+      if (course.folder != null)
+        coursePath = course.folder + "/";
+      $(document).attr("title", course.course_name);
+      $(function () {
+        $.ajax({
+          url: coursePath + course.course_no + "/imsmanifest.xml",
+          dataType: "xml",
+          async: false,
+          cache: false,
+          success: function (imsmanifest) {
+            var insertTr = "";
+            var docTitle = $(imsmanifest).find("manifest organizations organization > title").text();
+            $(document).attr("title", docTitle);
+            $(".title_font").html("当前播放的课程：" + course.course_name);
+            $(imsmanifest).find("manifest organizations organization > item").each(function (index, item) {
+              var title = $(item).find("title").text();
+              //如果没有identifier则没有入口
+              var identifier = $(item).attr("identifierref");
+              var href;
+              if (identifier != null)
+                href = $(imsmanifest).find("manifest resources resource[identifier='" + identifier + "']")
+                .attr("href");
+              insertTr += tableTr.replace("{0}", title)
+                .replace("{1}", identifier == null ? "" : playBtn.replace("{0}", playUrl.replace("{0}",
+                  identifier).replace("{1}", coursePath + course.course_no + "/" + href)))
+                .replace("{2}", "10");
+              //查看是否有子集
+              var son = $(item).children("item");
+              if (son.length > 0) {
+                $(son).each(function (sindex, sitem) {
+                  var stitle = $(sitem).find("title").text();
+                  //如果没有identifier则没有入口
+                  var sidentifier = $(sitem).attr("identifierref");
+                  var shref;
+                  if (sidentifier != null)
+                    shref = $(imsmanifest).find("manifest resources resource[identifier='" +
+                      sidentifier + "']").attr("href");
+                  insertTr += tableTr.replace("{0}", stitle)
+                    .replace("{1}", sidentifier == null ? "" : playBtn.replace("{0}", playUrl.replace(
+                      "{0}", sidentifier).replace("{1}", coursePath + course.course_no + "/" +
+                      shref)))
+                    .replace("{2}", "40");
+                });
+              }
+            });
+            $("#main .dataTable tr").after(insertTr);
+          },
+          error: function () {
+            alert("课件清单解析错误，请重试，如此错误始终出现，请检查课件清单文件是否存在并且格式正确。");
+            window.close();
+          }
+        });
+        //如果只有一讲，直接进入
+        if ($(".dataTable tr").length == 2) {
+          $(".dataTable tr a:eq(0)")[0].click();
+        } else {
+          setTimeout(function () {
+            $(".dataTable tr a:eq(0)")[0].click();
+          }, 5000);
+        }
+        //如果有多讲，等待5秒，默认进入第一讲
+
+
+        $('.dataTable tr').not(':eq(0)').hover(function () {
+          $(this).children('td').css("color", '#cc0000');
+          $(this).find('img').attr('src', 'images/play_active.png')
+
+        }, function () {
+          $(this).children('td').css("color", '#505050');
+          $(this).find('img').attr('src', 'images/play.png')
+        })
+      })
+    }
+  </script>
+</head>
+
+<body>
+  <div class="course_play_title">
+    <div class="course_play_wrap">
+      <img class="lf" src="images/chapter.png" alt="" width="20">
+      <h3 class="lf">课程目录</h3>
+      <div class="clear"></div>
+    </div>
+  </div>
+  <div class="title_font course_play_wrap">
+    当前播放的课程：
+  </div>
+  <div class="content_box">
+    <div id="main">
+      <table class="dataTable">
+        <tr>
+          <th>课程目录</th>
+          <th width="80px">播放</th>
+        </tr>
+      </table>
+
+    </div>
+  </div>
+
+
+  <script type="text/javascript">
+    if ($("table tr").length == 2)
+      location.href = $("a:eq(0)").attr("href");
+  </script>
+</body>
+
+</html>

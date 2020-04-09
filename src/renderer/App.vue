@@ -59,7 +59,7 @@ export default {
     ipcRenderer.on('choose-course-fail',(e,data)=>{
       this.$toast(`选课失败 ~`);
     });
-    //
+    // 更新进度
     ipcRenderer.on('learn-course-progress',(e,percent)=>{
       console.log('learn-course-progress',percent);
       this.setCurrentCoursePercent(percent);
@@ -67,6 +67,7 @@ export default {
     ipcRenderer.on('learn-course-fail',(e,data)=>{
       this.$toast(data || `学习失败,请重启应用再试 ~`);
     });
+    // 学习完一节课
     ipcRenderer.on('learn-course-finish',(e)=>{
       let forcedCourses = this.forcedCourses.courses;
       let optionalCourses = this.optionalCourses.courses;

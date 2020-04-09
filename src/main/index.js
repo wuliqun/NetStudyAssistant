@@ -150,7 +150,7 @@ function intervalLearn(id){
       seekCourse(serializeParams(COOKIE,';'));
       courseDetail(id,serializeParams(COOKIE,';')).then(percent=>{
         console.log('readCourseProgress,--',percent);
-        if(percent === '100.0%'){
+        if(percent.indexOf('100') !== -1){
           mainWindow.webContents.send('learn-course-finish');
           clearInterval(learnTimer);
         }else{          

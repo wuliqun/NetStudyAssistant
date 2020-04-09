@@ -16,7 +16,7 @@ function learnCourse(id, cookie) {
     params = JSON.parse(decodeURIComponent($('#course_frm').attr('src')).split('=')[1]);
     referer = $('#course_frm').attr('src');
     console.log(params);
-    // getConfig(params, cookie);
+    getConfig(params, cookie);
     return $('body').attr('onbeforeunload').match(/(\d+)/)[1];
   }, err => {
     console.log('learn error------', err);
@@ -55,11 +55,23 @@ function getConfig(param, cookie) {
 }
 // 保持学习进度 TODO:  unfinish
 function seekCourse(cookie) {
+  let serializeSco = params.serialize_sco;
+  if(!serializeSco){
+    if(typeof config.scoId !== 'undefined'){
+      serializeSco = JSON.stringify({
+        [config.scoId]:{}
+      })
+    }else{
+      serializeSco = JSON.stringify({
+        0:{}
+      })
+    }
+  }
   let learnParams = {
     callback: 'showData',
     uuid: params.uuid,
     id: params.ucid,
-    serializeSco: encodeURIComponent(params.serialize_sco),
+    serializeSco: encodeURIComponent(serializeSco),
     duration: 30000,
     a: true,
     token: encodeURIComponent(params.token),
@@ -85,11 +97,11 @@ function seekCourse(cookie) {
       console.log('error,',error);
       console.log('response,',response.statusCode);
       console.log('body,',body);
-      if(typeof body === 'string' && body.indexOf('success') !== -1){
+      if(!error && response.statusCode === 200){
         resolve();
       }else{
         reject('学习失败,请更换课程尝试 ~');
-      }      
+      }  
     })
   })
 }

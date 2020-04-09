@@ -67,8 +67,14 @@ export default {
     ipcRenderer.on('learn-course-fail',(e,data)=>{
       this.$toast(data || `学习失败,请重启应用再试 ~`);
     });
+    // 学习完一节课  更新分数
+    ipcRenderer.on('update-user-info',(e,data)=>{
+      let userinfo = JSON.parse(data);
+      this.setUserInfo(Object.assign(this.userInfo,userinfo));
+    });
     // 学习完一节课
     ipcRenderer.on('learn-course-finish',(e)=>{
+      console.log('learn-course-finish');
       let forcedCourses = this.forcedCourses.courses;
       let optionalCourses = this.optionalCourses.courses;
       let index = -1,i,attr = 'forcedCourses';
@@ -88,8 +94,8 @@ export default {
       if(index === -1){
         for(i = 0;i<optionalCourses.length;i++){
           if(optionalCourses[i].courseId === this.currentCourse.courseId){
-              index = i;
-              if(i!== 0){
+            index = i;
+            if(i!== 0){
               i = 0;
             }else if(optionalCourses.length > 1){
               i = 1;
@@ -101,12 +107,16 @@ export default {
         }
         attr = 'optionalCourses'
       }
+      console.log(`course type:${attr},course index:${index},next course index:${i}`);
       if(i === -1){
         let course = this[attr].courses[i];
         this.setCurrentCourse(course);
         setTimeout(() => {
           ipcRenderer.send('learn-course',course.courseId);
+          console.log(`continue learn send! id:${course.courseId}`);
         }, 500);
+      }else{
+        this.stopLearn();
       }
       if(index !== -1){
         this.finishCourse({attr,index});

@@ -83,9 +83,11 @@ export default {
     },
     finishCourse(state,data){
       let {attr,index} = data;
-      let c = state[attr].splice(index,1)[0];
+      let c = state[attr].courses.splice(index,1)[0];
       c.percent = '100.0%';
-      state.completedCourses.unshift(c);
+      if(state.completedCourses.fetched){
+        state.completedCourses.courses.unshift(c);
+      }
     }
   },
   actions: {}

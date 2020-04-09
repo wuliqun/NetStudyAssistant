@@ -132,6 +132,7 @@ export default {
   outline: none;
   width: 300px;
   height: 44px;
+  cursor: pointer;
   /* background:linear-gradient(90deg,rgba(255,171,27,1) 0%,rgba(255,114,0,1) 100%); */
   background: linear-gradient(
     90deg,
@@ -163,6 +164,7 @@ export default {
   right:10px;
   width:30px;
   height:30px;
+  cursor: pointer;
   background-image: url(../img/arrow-down.png);
   background-size: 100% 100%;
 }

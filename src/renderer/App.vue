@@ -70,7 +70,8 @@ export default {
     // 学习完一节课  更新分数
     ipcRenderer.on('update-user-info',(e,data)=>{
       let userinfo = JSON.parse(data);
-      this.setUserInfo(Object.assign(this.userInfo,userinfo));
+      console.log(userinfo);
+      this.setUserInfo(Object.assign({},this.userInfo,userinfo));
     });
     // 学习完一节课
     ipcRenderer.on('learn-course-finish',(e)=>{
@@ -108,7 +109,7 @@ export default {
         attr = 'optionalCourses'
       }
       console.log(`course type:${attr},course index:${index},next course index:${i}`);
-      if(i === -1){
+      if(i !== -1){
         let course = this[attr].courses[i];
         this.setCurrentCourse(course);
         setTimeout(() => {

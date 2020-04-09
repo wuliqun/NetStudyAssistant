@@ -174,6 +174,10 @@ ipcMain.on('learn-course',(e,id)=>{
   });
 });
 
+ipcMain.on('stop-learn-course',(e)=>{
+  if(learnTimer) clearInterval(learnTimer);
+});
+
 // 个人课程
 ipcMain.on('get-my-course',(e,type)=>{
   console.log('get-my-course');

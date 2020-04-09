@@ -23,7 +23,7 @@
         <p class="txt" :class="{red:!completedMust}">{{ userInfo.ywcbxxs }}</p>
       </div>
       <div class="btns">
-        <a href="javascript:void(0);" class="btn" @click="autoLearn">自动学习</a>
+        <a href="javascript:void(0);" class="btn" @click="autoLearn">{{ learning ? '停止学习' : '自动学习'}}</a>
         <a href="javascript:void(0);" class="btn" @click="gotoChooseCourse">前往选课</a>
       </div>
       <div class="tip" :class="{red:!completedTotal}">
@@ -151,6 +151,11 @@ export default {
       ipcRenderer.send('learn-course',course.courseId);
     },
     autoLearn(){
+      if(this.learning){
+        this.stopLearn();
+        ipcRenderer.send('stop-learn-course');
+        return ;
+      }
       this.pageIndex = 0;
       this.startLearn(0);
     },

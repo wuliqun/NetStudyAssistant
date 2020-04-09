@@ -51,7 +51,6 @@ export default {
     //   {
     //     username:'362203197702021945',
     //     password:'Ww770202',
-    //     nickname:'习薇薇'
     //   }
     // ]))
     this.users = JSON.parse(localStorage.getItem('users') || '[]');
